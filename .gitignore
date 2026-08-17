@@ -1,0 +1,13 @@
+# Segredos: nunca versionar
+**/.env
+
+# Backups e dumps
+*.sql
+*.sql.gz
+*.tmp
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store

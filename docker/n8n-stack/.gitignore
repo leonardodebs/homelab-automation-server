@@ -1,0 +1,6 @@
+# Segredos: nunca versionar
+.env
+
+# Arquivos locais do sistema
+*.log
+.DS_Store

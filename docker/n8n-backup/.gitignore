@@ -1,0 +1,10 @@
+# Dumps de backup: nunca versionar
+*.sql
+*.sql.gz
+*.tmp
+
+# Logs
+*.log
+
+# Sistema
+.DS_Store
