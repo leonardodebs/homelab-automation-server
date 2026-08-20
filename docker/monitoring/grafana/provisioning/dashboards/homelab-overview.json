@@ -136,6 +136,48 @@
         { "refId": "A", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(pg_stat_database_xact_commit{datname=\"n8n\"}[5m])", "legendFormat": "commit" },
         { "refId": "B", "datasource": { "type": "prometheus", "uid": "prometheus" }, "expr": "rate(pg_stat_database_xact_rollback{datname=\"n8n\"}[5m])", "legendFormat": "rollback" }
       ]
+    },
+    {
+      "type": "row",
+      "title": "Rede (ntopng)",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 32 },
+      "id": 103
+    },
+    {
+      "type": "timeseries",
+      "title": "Rede - Throughput (bps)",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 33 },
+      "id": 12,
+      "fieldConfig": { "defaults": { "unit": "bps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT mean(\"bps\") FROM \"iface:throughput_bps\" WHERE $timeFilter GROUP BY time($__interval) fill(null)", "rawQuery": true, "resultFormat": "time_series" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rede - Fluxos ativos",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 33 },
+      "id": 13,
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT mean(\"num_flows\") FROM \"iface:flows\" WHERE $timeFilter GROUP BY time($__interval) fill(null)", "rawQuery": true, "resultFormat": "time_series" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rede - Protocolos L7 (nDPI)",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 41 },
+      "id": 14,
+      "fieldConfig": { "defaults": { "unit": "bps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT non_negative_derivative(mean(\"bytes\"), 1s) * 8 AS \"bps\" FROM \"iface:ndpi\" WHERE $timeFilter GROUP BY time($__interval), \"protocol\" fill(null)", "rawQuery": true, "resultFormat": "time_series", "alias": "$tag_protocol" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rede - Taxa de tráfego (derivada)",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 41 },
+      "id": 15,
+      "fieldConfig": { "defaults": { "unit": "bps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT non_negative_derivative(mean(\"bytes\"), 1s) * 8 AS \"bps\" FROM \"iface:traffic\" WHERE $timeFilter GROUP BY time($__interval) fill(null)", "rawQuery": true, "resultFormat": "time_series" } ]
     }
   ]
 }

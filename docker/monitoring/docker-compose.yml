@@ -13,7 +13,6 @@ services:
       - "9090:9090"
     networks:
       - monitoring
-
   grafana:
     image: grafana/grafana:latest
     container_name: grafana
@@ -22,6 +21,7 @@ services:
       GF_SECURITY_ADMIN_USER: ${GRAFANA_USER}
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
+      INFLUXDB_USER_PASSWORD: ${INFLUXDB_USER_PASSWORD}
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
@@ -31,7 +31,6 @@ services:
       - prometheus
     networks:
       - monitoring
-
   node-exporter:
     image: prom/node-exporter:latest
     container_name: node-exporter
@@ -48,7 +47,6 @@ services:
       - /:/rootfs:ro
     networks:
       - monitoring
-
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:latest
     container_name: cadvisor
@@ -64,7 +62,6 @@ services:
       - /dev/disk/:/dev/disk:ro
     networks:
       - monitoring
-
   postgres-exporter:
     image: quay.io/prometheuscommunity/postgres-exporter:latest
     container_name: postgres-exporter
@@ -74,15 +71,31 @@ services:
     networks:
       - monitoring
       - n8n-net
-
+  influxdb:
+    image: influxdb:1.8
+    container_name: influxdb
+    restart: unless-stopped
+    environment:
+      INFLUXDB_DB: ntopng
+      INFLUXDB_HTTP_AUTH_ENABLED: "true"
+      INFLUXDB_ADMIN_USER: ${INFLUXDB_ADMIN_USER}
+      INFLUXDB_ADMIN_PASSWORD: ${INFLUXDB_ADMIN_PASSWORD}
+      INFLUXDB_USER: ${INFLUXDB_USER}
+      INFLUXDB_USER_PASSWORD: ${INFLUXDB_USER_PASSWORD}
+    volumes:
+      - influxdb_data:/var/lib/influxdb
+    ports:
+      - "8086:8086"
+    networks:
+      - monitoring
 volumes:
   prometheus_data:
   grafana_data:
-
+  influxdb_data:
 networks:
   monitoring:
   # Rede do n8n-stack, para o postgres-exporter alcançar o banco.
-  # O nome real é injetado pelo setup no arquivo .env (N8N_NETWORK).
+  # O nome real e injetado pelo setup no arquivo .env (N8N_NETWORK).
   n8n-net:
     external: true
     name: ${N8N_NETWORK}
