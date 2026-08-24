@@ -10,6 +10,7 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/restic-alerts.yml:/etc/prometheus/restic-alerts.yml:ro
       - ./prometheus/dell-node-alerts.yml:/etc/prometheus/dell-node-alerts.yml:ro
+      - ./prometheus/homelab-node-alerts.yml:/etc/prometheus/homelab-node-alerts.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "192.168.100.3:9090:9090"
