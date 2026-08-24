@@ -1,6 +1,6 @@
 services:
   prometheus:
-    image: prom/prometheus:latest
+    image: prom/prometheus:v3.13.2
     container_name: prometheus
     restart: unless-stopped
     command:
@@ -8,13 +8,39 @@ services:
       - '--storage.tsdb.retention.time=15d'
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/restic-alerts.yml:/etc/prometheus/restic-alerts.yml:ro
+      - ./prometheus/dell-node-alerts.yml:/etc/prometheus/dell-node-alerts.yml:ro
       - prometheus_data:/prometheus
     ports:
-      - "9090:9090"
+      - "192.168.100.3:9090:9090"
+    networks:
+      - monitoring
+    depends_on:
+      - alertmanager
+  alertmanager:
+    image: prom/alertmanager:v0.33.1
+    container_name: alertmanager
+    restart: unless-stopped
+    user: "1000:1000"
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - ./alertmanager/templates:/etc/alertmanager/templates:ro
+      - /home/leonardo/.config/homelab-alerts/gmail-app-password:/run/secrets/gmail_app_password:ro
+      - /home/leonardo/.local/share/homelab-alertmanager:/alertmanager
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
     networks:
       - monitoring
   grafana:
-    image: grafana/grafana:latest
+    image: grafana/grafana:13.1.3
     container_name: grafana
     restart: unless-stopped
     environment:
@@ -26,13 +52,13 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
     ports:
-      - "3000:3000"
+      - "192.168.100.3:3000:3000"
     depends_on:
       - prometheus
     networks:
       - monitoring
   node-exporter:
-    image: prom/node-exporter:latest
+    image: prom/node-exporter:v1.12.1
     container_name: node-exporter
     restart: unless-stopped
     pid: host
@@ -48,7 +74,7 @@ services:
     networks:
       - monitoring
   cadvisor:
-    image: gcr.io/cadvisor/cadvisor:latest
+    image: gcr.io/cadvisor/cadvisor:v0.55.1
     container_name: cadvisor
     restart: unless-stopped
     privileged: true
@@ -63,7 +89,7 @@ services:
     networks:
       - monitoring
   postgres-exporter:
-    image: quay.io/prometheuscommunity/postgres-exporter:latest
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.20.1
     container_name: postgres-exporter
     restart: unless-stopped
     environment:
@@ -72,7 +98,7 @@ services:
       - monitoring
       - n8n-net
   influxdb:
-    image: influxdb:1.8
+    image: influxdb:1.8.10
     container_name: influxdb
     restart: unless-stopped
     environment:
@@ -85,7 +111,7 @@ services:
     volumes:
       - influxdb_data:/var/lib/influxdb
     ports:
-      - "8086:8086"
+      - "192.168.100.3:8086:8086"
     networks:
       - monitoring
 volumes:
