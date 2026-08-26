@@ -11,6 +11,7 @@ services:
       - ./prometheus/restic-alerts.yml:/etc/prometheus/restic-alerts.yml:ro
       - ./prometheus/dell-node-alerts.yml:/etc/prometheus/dell-node-alerts.yml:ro
       - ./prometheus/homelab-node-alerts.yml:/etc/prometheus/homelab-node-alerts.yml:ro
+      - ./prometheus/openclaw-alerts.yml:/etc/prometheus/openclaw-alerts.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "192.168.100.3:9090:9090"
@@ -68,10 +69,12 @@ services:
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev)($$|/)'
+      - '--collector.textfile.directory=/textfile'
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
+      - ./textfile:/textfile:ro
     networks:
       - monitoring
   cadvisor:

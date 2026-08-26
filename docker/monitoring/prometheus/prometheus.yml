@@ -6,6 +6,7 @@ rule_files:
   - /etc/prometheus/restic-alerts.yml
   - /etc/prometheus/dell-node-alerts.yml
   - /etc/prometheus/homelab-node-alerts.yml
+  - /etc/prometheus/openclaw-alerts.yml
 
 alerting:
   alertmanagers:

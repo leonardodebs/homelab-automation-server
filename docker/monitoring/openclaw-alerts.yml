@@ -1,0 +1,160 @@
+groups:
+  - name: openclaw
+    rules:
+      - alert: OpenClawGatewayDown
+        expr: openclaw_gateway_up == 0
+        for: 5m
+        labels:
+          severity: critical
+          service: openclaw
+        annotations:
+          summary: Gateway OpenClaw indisponível
+          description: O endpoint de saúde do OpenClaw está indisponível há cinco minutos.
+
+      - alert: OpenClawCronFalhando
+        expr: openclaw_cron_jobs_failing > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Rotina OpenClaw com falha
+          description: Há pelo menos uma rotina habilitada cuja última execução falhou.
+
+      - alert: OpenClawBackupAtrasado
+        expr: openclaw_last_backup_age_seconds > 129600
+        for: 30m
+        labels:
+          severity: critical
+          service: openclaw
+        annotations:
+          summary: Backup OpenClaw atrasado
+          description: O último snapshot Restic tem mais de 36 horas.
+
+      - alert: OpenClawMetricasAusentes
+        expr: time() - openclaw_metrics_generated_timestamp_seconds > 900
+        for: 5m
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Coletor OpenClaw sem atualização
+          description: As métricas do OpenClaw não são atualizadas há mais de 15 minutos.
+
+      - alert: DashboardFitnessDown
+        expr: openclaw_dashboard_fitness_up == 0
+        for: 10m
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Dashboard fitness indisponível
+          description: O dashboard fitness está indisponível há dez minutos.
+
+      - alert: OpenClawHistoricoCronIncompleto
+        expr: openclaw_cron_history_collection_failures > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Coleta detalhada de rotinas incompleta
+          description: Uma ou mais rotinas não tiveram o histórico coletado para as métricas.
+
+      - alert: OpenClawCronAtrasado
+        expr: openclaw_cron_overdue > 0
+        for: 10m
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Rotina OpenClaw atrasada
+          description: A rotina {{ $labels.job_name }} ultrapassou o próximo horário previsto.
+
+      - alert: OpenClawEntregaTelegramFalhou
+        expr: (openclaw_cron_last_delivery_success == 0) and on(job_id, job_name) ((time() - openclaw_cron_last_run_timestamp_seconds) < 1800)
+        for: 5m
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Entrega recente no Telegram falhou
+          description: A execução recente da rotina {{ $labels.job_name }} não foi entregue.
+
+      - alert: OpenClawTokensElevados
+        expr: (openclaw_cron_last_tokens{type="total"} > 50000) and on(job_id, job_name) ((time() - openclaw_cron_last_run_timestamp_seconds) < 1800)
+        for: 1m
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Consumo elevado de tokens
+          description: A rotina {{ $labels.job_name }} consumiu mais de 50 mil tokens na execução recente.
+
+      - alert: OpenClawDuracaoElevada
+        expr: (openclaw_cron_last_duration_seconds > 300) and on(job_id, job_name) ((time() - openclaw_cron_last_run_timestamp_seconds) < 1800)
+        for: 1m
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Rotina com duração elevada
+          description: A rotina {{ $labels.job_name }} levou mais de cinco minutos na execução recente.
+
+      - alert: OpenClawFallbackRecente
+        expr: (time() - openclaw_model_fallback_last_timestamp_seconds) < 600
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Fallback de modelo recente
+          description: O Gateway registrou fallback recente por {{ $labels.reason }}.
+
+      - alert: OpenClawErroProvedorRecente
+        expr: (time() - openclaw_gateway_last_error_timestamp_seconds) < 600
+        labels:
+          severity: warning
+          service: openclaw
+        annotations:
+          summary: Erro recente de provedor
+          description: O Gateway registrou recentemente um erro do tipo {{ $labels.error_type }}.
+
+      - alert: OpenClawContainerAusente
+        expr: absent(container_last_seen{name="openclaw-lab"})
+        for: 5m
+        labels:
+          severity: critical
+          service: openclaw
+        annotations:
+          summary: Container do OpenClaw ausente
+          description: O container openclaw-lab não aparece nas métricas do cAdvisor há cinco minutos.
+
+      - alert: N8nContainerAusente
+        expr: absent(container_last_seen{name="n8n"})
+        for: 5m
+        labels:
+          severity: critical
+          service: n8n
+        annotations:
+          summary: Container n8n ausente
+          description: O container n8n não aparece nas métricas do cAdvisor há cinco minutos.
+
+      - alert: N8nPostgresContainerAusente
+        expr: absent(container_last_seen{name="n8n-postgres"})
+        for: 5m
+        labels:
+          severity: critical
+          service: n8n
+        annotations:
+          summary: PostgreSQL do n8n ausente
+          description: O container n8n-postgres não aparece nas métricas do cAdvisor há cinco minutos.
+
+      - alert: DashboardFitnessContainerAusente
+        expr: absent(container_last_seen{name="dashboard-fitness"})
+        for: 5m
+        labels:
+          severity: warning
+          service: dashboard-fitness
+        annotations:
+          summary: Container do dashboard fitness ausente
+          description: O container dashboard-fitness não aparece nas métricas do cAdvisor há cinco minutos.
