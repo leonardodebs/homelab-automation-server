@@ -1,0 +1,42 @@
+groups:
+  - name: jobops
+    rules:
+      # A coleta é diária. Passando de 36h sem execução bem-sucedida, algo
+      # travou: o agendamento do n8n, a API ou o próprio pipeline.
+      - alert: JobOpsColetaParada
+        expr: time() - jobops_pipeline_last_run_timestamp_seconds > 129600
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JobOps sem coleta há mais de 36h"
+          description: "Última execução do pipeline em {{ $value | humanizeDuration }} atrás."
+
+      - alert: JobOpsPipelineFalhou
+        expr: jobops_pipeline_last_run_success == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Última execução do pipeline do JobOps falhou"
+          description: "Consulte /api/pipeline/runs para o detalhe do erro."
+
+      # Coletores falhando em silêncio: a execução termina, mas as fontes
+      # devolvem erro.
+      - alert: JobOpsColetoresComErro
+        expr: jobops_pipeline_last_run_jobs{kind="errors"} > 20
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Coletores do JobOps acumulando erros"
+          description: "{{ $value }} erros na última execução."
+
+      # Se a API cair, o Prometheus perde o alvo.
+      - alert: JobOpsApiForaDoAr
+        expr: up{job="jobops"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "API do JobOps não responde ao Prometheus"

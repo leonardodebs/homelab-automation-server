@@ -7,6 +7,7 @@ rule_files:
   - /etc/prometheus/dell-node-alerts.yml
   - /etc/prometheus/homelab-node-alerts.yml
   - /etc/prometheus/openclaw-alerts.yml
+  - /etc/prometheus/jobops-alerts.yml
 
 alerting:
   alertmanagers:
@@ -64,4 +65,16 @@ scrape_configs:
         labels:
           instance: homelab-dell
           server: dell
+          site: homelab
+
+  # Metricas de dominio do JobOps Agent
+  - job_name: 'jobops'
+    scrape_interval: 60s
+    scrape_timeout: 20s
+    metrics_path: /metrics
+    static_configs:
+      - targets: ['192.168.100.3:8000']
+        labels:
+          instance: jobops-api
+          server: lenovo
           site: homelab
