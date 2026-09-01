@@ -1,0 +1,136 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "graphTooltip": 1,
+  "schemaVersion": 39,
+  "tags": ["homelab", "rede", "ntopng"],
+  "time": { "from": "now-1h", "to": "now" },
+  "refresh": "15s",
+  "title": "Rede (ntopng)",
+  "uid": "rede-ntopng",
+  "templating": { "list": [] },
+  "panels": [
+    {
+      "type": "row",
+      "title": "Tráfego",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 0 },
+      "id": 200
+    },
+    {
+      "type": "timeseries",
+      "title": "Rede - Throughput (bps)",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 1 },
+      "id": 12,
+      "fieldConfig": { "defaults": { "unit": "bps", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT mean(\"bps\") FROM \"iface:throughput_bps\" WHERE $timeFilter GROUP BY time($__interval) fill(null)", "rawQuery": true, "resultFormat": "time_series" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rede - Fluxos ativos",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 1 },
+      "id": 13,
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT mean(\"num_flows\") FROM \"iface:flows\" WHERE $timeFilter GROUP BY time($__interval) fill(null)", "rawQuery": true, "resultFormat": "time_series" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rede - Protocolos L7 (nDPI)",
+      "description": "Tráfego por protocolo de aplicação (deep packet inspection do ntopng). Legenda ordenada pela média, maior primeiro — ajuda a achar o que está dominando o gráfico.",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 9, "w": 12, "x": 0, "y": 9 },
+      "id": 14,
+      "fieldConfig": { "defaults": { "unit": "bps", "custom": { "drawStyle": "line", "fillOpacity": 15, "stacking": { "mode": "normal" } } }, "overrides": [] },
+      "options": { "legend": { "displayMode": "table", "placement": "right", "calcs": ["mean", "max"], "sortBy": "Mean", "sortDesc": true } },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT non_negative_derivative(mean(\"bytes\"), 1s) * 8 AS \"bps\" FROM \"iface:ndpi\" WHERE $timeFilter GROUP BY time($__interval), \"protocol\" fill(null)", "rawQuery": true, "resultFormat": "time_series", "alias": "$tag_protocol" } ]
+    },
+    {
+      "type": "table",
+      "title": "Rede - Top talkers (bytes, por host)",
+      "description": "Hosts que mais trafegaram no período selecionado, somando enviado + recebido. Nomes mapeados manualmente a partir do DHCP estático — host não mapeado aparece com o IP/MAC cru do ntopng.",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 9, "w": 12, "x": 12, "y": 9 },
+      "id": 15,
+      "fieldConfig": { "defaults": { "unit": "bytes" }, "overrides": [ { "matcher": { "id": "byName", "options": "host" }, "properties": [ { "id": "unit", "value": "short" }, { "id": "custom.width", "value": 260 }, { "id": "mappings", "value": [ { "type": "value", "options": {
+        "192.168.15.2": { "text": "SRVDELL (.2)" },
+        "192.168.15.3": { "text": "SRVLENOVO (.3)" },
+        "192.168.15.50": { "text": "leonote (.50)" },
+        "192.168.15.51": { "text": "2690n (.51)" },
+        "192.168.15.52": { "text": "redmi-note-14-pro (.52)" },
+        "192.168.15.53": { "text": "echo-pop-sala (.53)" },
+        "192.168.15.54": { "text": "echo-dot-quarto (.54)" },
+        "192.168.15.55": { "text": "redmi-note-13 (.55)" }
+      } } ] } ] } ] },
+      "options": { "showHeader": true, "sortBy": [ { "displayName": "total", "desc": true } ] },
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "time": true } } },
+        { "id": "calculateField", "options": { "mode": "reduce", "reduce": { "reducer": "sum", "include": ["enviado", "recebido"] }, "alias": "total" } },
+        { "id": "sortBy", "options": { "sort": [ { "field": "total", "desc": true } ] } },
+        { "id": "limit", "options": { "limitField": 10 } }
+      ],
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT sum(\"bytes_sent\") AS \"enviado\", sum(\"bytes_rcvd\") AS \"recebido\" FROM \"host:traffic\" WHERE $timeFilter GROUP BY \"host\"", "rawQuery": true, "resultFormat": "table" } ]
+    },
+    {
+      "type": "row",
+      "title": "Segurança / Anomalias",
+      "gridPos": { "h": 1, "w": 24, "x": 0, "y": 18 },
+      "id": 201
+    },
+    {
+      "type": "stat",
+      "title": "Alertas ativos (engaged)",
+      "description": "Alertas que o ntopng considera em aberto agora, somados entre todos os hosts. Zero é o esperado; se subir e ficar alto, vale olhar o host correspondente.",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 19 },
+      "id": 16,
+      "fieldConfig": { "defaults": { "unit": "short", "thresholds": { "mode": "absolute", "steps": [ { "color": "green", "value": null }, { "color": "yellow", "value": 1 }, { "color": "red", "value": 5 } ] } }, "overrides": [] },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT sum(\"alerts\") FROM \"host:engaged_alerts\" WHERE $timeFilter GROUP BY time($__interval) fill(0)", "rawQuery": true, "resultFormat": "time_series" } ]
+    },
+    {
+      "type": "stat",
+      "title": "Score da rede (subnet)",
+      "description": "Score de risco calculado pelo ntopng para a(s) subnet(s) monitorada(s) (escala própria do ntopng, tipicamente na casa dos milhares — não é 0-100). Sem histórico suficiente ainda para definir limiares confiáveis de alerta; acompanhe a tendência por enquanto, não o valor absoluto.",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 19 },
+      "id": 18,
+      "fieldConfig": { "defaults": { "unit": "short", "color": { "mode": "fixed", "fixedColor": "blue" } }, "overrides": [] },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT mean(\"score\") FROM \"subnet:score\" WHERE $timeFilter GROUP BY time($__interval) fill(null)", "rawQuery": true, "resultFormat": "time_series" } ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Anomalias de host na interface (locais x remotos)",
+      "description": "Quantidade de hosts que o ntopng marcou com comportamento anômalo, separado entre rede local e remota.",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 19 },
+      "id": 17,
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "fillOpacity": 10 } }, "overrides": [] },
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT mean(\"num_loc_hosts_anom\") AS \"locais\", mean(\"num_rem_hosts_anom\") AS \"remotos\" FROM \"iface:hosts_anomalies\" WHERE $timeFilter GROUP BY time($__interval) fill(0)", "rawQuery": true, "resultFormat": "time_series" } ]
+    },
+    {
+      "type": "table",
+      "title": "Hosts com mais alertas (total, no período)",
+      "description": "Contagem acumulada de alertas do ntopng por host desde que cada alerta foi registrado — útil pra achar o dispositivo mais barulhento, não é o número de alertas 'agora'.",
+      "datasource": { "type": "influxdb", "uid": "influxdb" },
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 25 },
+      "id": 19,
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [ { "matcher": { "id": "byName", "options": "host" }, "properties": [ { "id": "custom.width", "value": 300 }, { "id": "mappings", "value": [ { "type": "value", "options": {
+        "192.168.15.2": { "text": "SRVDELL (.2)" },
+        "192.168.15.3": { "text": "SRVLENOVO (.3)" },
+        "192.168.15.50": { "text": "leonote (.50)" },
+        "192.168.15.51": { "text": "2690n (.51)" },
+        "192.168.15.52": { "text": "redmi-note-14-pro (.52)" },
+        "192.168.15.53": { "text": "echo-pop-sala (.53)" },
+        "192.168.15.54": { "text": "echo-dot-quarto (.54)" },
+        "192.168.15.55": { "text": "redmi-note-13 (.55)" }
+      } } ] } ] } ] },
+      "options": { "showHeader": true },
+      "transformations": [
+        { "id": "organize", "options": { "excludeByName": { "time": true } } },
+        { "id": "sortBy", "options": { "sort": [ { "field": "alertas", "desc": true } ] } },
+        { "id": "limit", "options": { "limitField": 10 } }
+      ],
+      "targets": [ { "refId": "A", "datasource": { "type": "influxdb", "uid": "influxdb" }, "query": "SELECT sum(\"alerts\") AS \"alertas\" FROM \"host:total_alerts\" WHERE $timeFilter GROUP BY \"host\"", "rawQuery": true, "resultFormat": "table" } ]
+    }
+  ]
+}

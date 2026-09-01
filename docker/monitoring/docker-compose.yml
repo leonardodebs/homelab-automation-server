@@ -2,7 +2,7 @@ services:
   prometheus:
     image: prom/prometheus:v3.13.2
     container_name: prometheus
-    restart: unless-stopped
+    restart: always
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=15d'
@@ -11,9 +11,11 @@ services:
       - ./prometheus/restic-alerts.yml:/etc/prometheus/restic-alerts.yml:ro
       - ./prometheus/dell-node-alerts.yml:/etc/prometheus/dell-node-alerts.yml:ro
       - ./prometheus/homelab-node-alerts.yml:/etc/prometheus/homelab-node-alerts.yml:ro
+      - ./prometheus/openclaw-alerts.yml:/etc/prometheus/openclaw-alerts.yml:ro
+      - ./prometheus/jobops-alerts.yml:/etc/prometheus/jobops-alerts.yml:ro
       - prometheus_data:/prometheus
     ports:
-      - "192.168.100.3:9090:9090"
+      - "192.168.15.3:9090:9090"
     networks:
       - monitoring
     depends_on:
@@ -53,7 +55,7 @@ services:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
     ports:
-      - "192.168.100.3:3000:3000"
+      - "192.168.15.3:3000:3000"
     depends_on:
       - prometheus
     networks:
@@ -68,10 +70,12 @@ services:
       - '--path.sysfs=/host/sys'
       - '--path.rootfs=/rootfs'
       - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev)($$|/)'
+      - '--collector.textfile.directory=/textfile'
     volumes:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /:/rootfs:ro
+      - ./textfile:/textfile:ro
     networks:
       - monitoring
   cadvisor:
@@ -112,7 +116,7 @@ services:
     volumes:
       - influxdb_data:/var/lib/influxdb
     ports:
-      - "192.168.100.3:8086:8086"
+      - "192.168.15.3:8086:8086"
     networks:
       - monitoring
 volumes:

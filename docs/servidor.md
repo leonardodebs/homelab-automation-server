@@ -11,7 +11,7 @@ Servidor Ubuntu 24.04 rodando serviços de automação e observabilidade em Dock
 | Item | Valor |
 |------|-------|
 | Hostname | vmlab |
-| IP fixo | 192.168.100.3 (eno1, cabo) |
+| IP fixo | 192.168.15.3 (eno1, cabo) |
 | Sistema | Ubuntu Server 24.04 LTS |
 | Kernel | 6.8.0-137-generic |
 | CPU | Intel Skylake 4 núcleos |
@@ -22,11 +22,12 @@ Servidor Ubuntu 24.04 rodando serviços de automação e observabilidade em Dock
 
 | Serviço | Porta | Função |
 |---------|-------|--------|
-| n8n | 5678 | Automação de workflows |
+| n8n | 5678 (https, Caddy `tls internal`) | Automação de workflows |
 | PostgreSQL | interna | Banco de dados do n8n |
-| Portainer | 9443 | Gerência visual dos containers |
+| Portainer | 9443 (https, Caddy `tls internal`) | Gerência visual dos containers |
 | Grafana | 3000 | Dashboards de observabilidade |
 | Prometheus | 9090 | Coleta e armazenamento de métricas |
+| InfluxDB | 8086 | Recebe métricas de rede do ntopng (roda no Dell, `192.168.15.2`) |
 | node_exporter | interna | Métricas do servidor |
 | cAdvisor | interna | Métricas dos containers |
 | postgres_exporter | interna | Métricas do PostgreSQL |
@@ -35,7 +36,7 @@ Servidor Ubuntu 24.04 rodando serviços de automação e observabilidade em Dock
 
 ### Base do sistema
 
-Instalação limpa do Ubuntu Server, com os primeiros ajustes de infraestrutura. A placa Wi-Fi Intel foi desabilitada via blacklist do `iwlwifi`, pois travava com crash de firmware (`NMI_INTERRUPT_LMAC_FATAL`) e não faz sentido em um servidor fixo com cabo. A rede migrou para a interface cabeada com IP fixo `192.168.100.3`. O kernel foi atualizado para o `6.8.0-137`, o disco foi expandido de 100 GB para os 232 GB completos do SSD (o instalador provisiona metade por padrão), e a verificação de firmware confirmou que nada faltava.
+Instalação limpa do Ubuntu Server, com os primeiros ajustes de infraestrutura. A placa Wi-Fi Intel foi desabilitada via blacklist do `iwlwifi`, pois travava com crash de firmware (`NMI_INTERRUPT_LMAC_FATAL`) e não faz sentido em um servidor fixo com cabo. A rede migrou para a interface cabeada com IP fixo `192.168.15.3`. O kernel foi atualizado para o `6.8.0-137`, o disco foi expandido de 100 GB para os 232 GB completos do SSD (o instalador provisiona metade por padrão), e a verificação de firmware confirmou que nada faltava.
 
 ### Segurança
 
@@ -45,13 +46,15 @@ A base de hardening foi aplicada e está registrada como código no script `setu
 
 Docker Engine e Compose instalados da fonte oficial. Os serviços foram organizados em projetos separados, cada um com seu Compose e README. O n8n usa PostgreSQL como banco (em vez do SQLite padrão), para robustez e backup no padrão Postgres. O Portainer dá visão web dos containers.
 
+Portainer e n8n ficam atrás de um Caddy dedicado cada um (`tls internal`): elimina o certificado autoassinado nativo e o aviso do navegador, ao custo de precisar importar a CA local de cada Caddy uma vez por dispositivo (ver `docker/portainer/README.md` e `docker/n8n-stack/README.md`).
+
 ### Backup
 
 Backup diário do PostgreSQL às 02h, via systemd timer, com compressão `pigz`, escrita atômica, verificação prévia de espaço em disco e retenção de 7 dias. Instalado pelo script `setup/install-n8n-backup.sh`.
 
 ### Observabilidade
 
-O Netdata foi avaliado primeiro, mas a escolha final foi o stack padrão do mercado: Prometheus coletando, Grafana visualizando, e três exporters (node_exporter, cAdvisor, postgres_exporter). O Grafana já vem com datasource e um dashboard das três camadas provisionados como código. O stack foi validado com teste de carga usando `stress-ng`, confirmando a coleta sob estresse de CPU e memória.
+O Netdata foi avaliado primeiro, mas a escolha final foi o stack padrão do mercado: Prometheus coletando, Grafana visualizando, e três exporters (node_exporter, cAdvisor, postgres_exporter). O mesmo Prometheus também faz scrape remoto do node_exporter/cAdvisor do outro servidor do homelab (Dell, `192.168.15.2`), então os dois hosts aparecem no mesmo Grafana. O InfluxDB recebe as métricas de rede do ntopng (que roda no Dell) e alimenta o dashboard de rede. O Grafana vem com dois dashboards provisionados como código: **Homelab Lenovo Overview** (servidor, disco, temperatura, containers, PostgreSQL) e **Rede (ntopng)** (tráfego, protocolos, top talkers, segurança/anomalias) — além do **Dell Overview**, que pertence ao repositório par. O stack foi validado com teste de carga usando `stress-ng`, confirmando a coleta sob estresse de CPU e memória.
 
 ## Portas liberadas no firewall
 
@@ -59,9 +62,10 @@ O Netdata foi avaliado primeiro, mas a escolha final foi o stack padrão do merc
 |-------|---------|
 | 22 | SSH |
 | 3000 | Grafana |
-| 5678 | n8n |
+| 5678 | n8n (Caddy) |
+| 8086 | InfluxDB (recebe do ntopng no Dell) |
 | 9090 | Prometheus |
-| 9443 | Portainer |
+| 9443 | Portainer (Caddy) |
 
 ## Reconstrução
 

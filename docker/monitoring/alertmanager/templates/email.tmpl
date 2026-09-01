@@ -27,19 +27,19 @@
         </p>
 
         {{ if eq .Labels.service "restic" }}
-        <a href="http://192.168.100.3:3000/d/restic-homelab/restic-homelab?orgId=1&amp;from=now-15d&amp;to=now&amp;timezone=browser"
+        <a href="http://192.168.15.3:3000/d/restic-homelab/restic-homelab?orgId=1&amp;from=now-15d&amp;to=now&amp;timezone=browser"
            style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:11px 16px;border-radius:7px;font-weight:bold;">
           Abrir Restic HomeLab no Grafana
         </a>
         {{ else if eq .Labels.server "dell" }}
-        <a href="http://192.168.100.3:3000/d/dell-overview/dell-overview?orgId=1&amp;from=now-6h&amp;to=now&amp;timezone=browser"
+        <a href="http://192.168.15.3:3000/d/dell-overview/dell-overview?orgId=1&amp;from=now-6h&amp;to=now&amp;timezone=browser"
            style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:11px 16px;border-radius:7px;font-weight:bold;">
           Abrir Dell Overview no Grafana
         </a>
         {{ else }}
-        <a href="http://192.168.100.3:3000/d/homelab-overview/homelab-overview?orgId=1&amp;from=now-6h&amp;to=now&amp;timezone=browser"
+        <a href="http://192.168.15.3:3000/d/lenovo-overview/homelab-lenovo-overview?orgId=1&amp;from=now-6h&amp;to=now&amp;timezone=browser"
            style="display:inline-block;background:#2563eb;color:#ffffff;text-decoration:none;padding:11px 16px;border-radius:7px;font-weight:bold;">
-          Abrir Homelab Overview no Grafana
+          Abrir Homelab Lenovo Overview no Grafana
         </a>
         {{ end }}
       </div>
