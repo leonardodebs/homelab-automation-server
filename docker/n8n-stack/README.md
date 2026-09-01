@@ -23,39 +23,44 @@ Projeto de infraestrutura pessoal, voltado a estudo e uso próprio, não a produ
 ## 🏗️ Arquitetura
 
 ```
-                Rede local 192.168.100.0/24
+                Rede local 192.168.15.0/24
                           │
                           ▼
-              ┌───────────────────────┐
-              │  Host: Ubuntu Server  │
-              │   (ThinkCentre M900)  │
-              │                       │
-              │   ┌───────────────┐   │
-   :5678 ─────┼──▶│   n8n         │   │
-   (browser)  │   │  (workflows)  │   │
-              │   └───────┬───────┘   │
-              │           │ rede      │
-              │           │ interna   │
-              │           ▼           │
-              │   ┌───────────────┐   │
-              │   │  PostgreSQL 16│   │
-              │   │  (dados n8n)  │   │
-              │   └───────────────┘   │
-              │                       │
-              │  Volumes persistentes │
-              └───────────────────────┘
+              ┌─────────────────────────────┐
+              │    Host: Ubuntu Server      │
+              │     (ThinkCentre M900)      │
+              │                             │
+              │   ┌─────────────────────┐   │
+   :5678 ─────┼──▶│ Caddy (tls internal)│   │
+   (browser)  │   └──────────┬──────────┘   │
+              │              │ rede interna │
+              │              ▼              │
+              │   ┌───────────────┐         │
+              │   │   n8n         │         │
+              │   │  (workflows)  │         │
+              │   └───────┬───────┘         │
+              │           │ rede interna     │
+              │           ▼                 │
+              │   ┌───────────────┐         │
+              │   │  PostgreSQL 16│         │
+              │   │  (dados n8n)  │         │
+              │   └───────────────┘         │
+              │                             │
+              │  Volumes persistentes       │
+              └─────────────────────────────┘
 ```
 
 **Componentes principais:**
 
 | Componente | Tecnologia | Responsabilidade |
 |-----------|-----------|-----------------|
-| n8n | n8n (imagem oficial) | Motor de automação, interface web na porta 5678 |
+| Caddy | Caddy 2 (`tls internal`) | Termina HTTPS na porta 5678 com CA local própria, repassa para o n8n em http na rede interna |
+| n8n | n8n (imagem oficial) | Motor de automação, interface web (atrás do Caddy) |
 | Banco | PostgreSQL 16 Alpine | Persistência dos workflows e credenciais do n8n |
-| Rede | Docker bridge (n8n-net) | Comunicação interna entre n8n e Postgres |
-| Volumes | Docker named volumes | Dados do Postgres e do n8n sobrevivem a reinícios |
+| Rede | Docker bridge (n8n-net) | Comunicação interna entre Caddy, n8n e Postgres |
+| Volumes | Docker named volumes | Dados do Postgres, do n8n e a CA do Caddy sobrevivem a reinícios |
 
-Somente a porta 5678 (n8n) é exposta ao host. O PostgreSQL fica acessível apenas na rede interna do Compose, não exposto à rede local, por segurança.
+Somente a porta 5678 (Caddy, à frente do n8n) é exposta ao host. O n8n em si não publica porta própria, e o PostgreSQL fica acessível apenas na rede interna do Compose — nenhum dos dois é exposto direto à rede local.
 
 ## 🛠️ Stack Técnica
 
@@ -103,10 +108,25 @@ docker compose logs -f
 Abra no navegador de qualquer máquina da rede local:
 
 ```
-http://192.168.100.3:5678
+https://192.168.15.3:5678
 ```
 
-No primeiro acesso, o n8n pede para criar a conta de dono (owner). Esse é o login de administrador do seu n8n. A partir daí você cria os workflows.
+É https com certificado emitido por uma CA local (Caddy `tls internal`) — o navegador vai avisar até você importar essa CA como raiz confiável (veja abaixo). No primeiro acesso, o n8n pede para criar a conta de dono (owner). Esse é o login de administrador do seu n8n. A partir daí você cria os workflows.
+
+### Confiar na CA local (elimina o aviso do navegador)
+
+Mesmo princípio usado no Portainer (CAs diferentes, então esse import é separado do dele):
+
+```bash
+# no servidor
+docker cp n8n-caddy:/data/caddy/pki/authorities/local/root.crt ./caddy-root-n8n.crt
+# copiar para a máquina cliente e importar como raiz confiável
+```
+
+- **Windows (admin):** `Import-Certificate -FilePath .\caddy-root-n8n.crt -CertStoreLocation Cert:\LocalMachine\Root`
+- **Firefox:** `about:preferences#privacy` → Certificados → Ver Certificados → Autoridades → Importar.
+- **macOS:** Keychain Access → arrastar para "System" → "Always Trust" para SSL.
+- **Linux:** copiar para `/usr/local/share/ca-certificates/` e rodar `sudo update-ca-certificates`.
 
 ### Variáveis de Ambiente
 
@@ -156,7 +176,7 @@ docker exec n8n-postgres pg_dump -U n8n n8n > backup_n8n_$(date +%Y%m%d).sql
 
 - O arquivo `.env` contém senhas e a chave de criptografia. Ele está no `.gitignore` e nunca deve ser enviado ao Git.
 - Guarde a `N8N_ENCRYPTION_KEY` em local seguro (KeePass). Sem ela, as credenciais salvas nos workflows ficam ilegíveis após uma restauração.
-- Esta configuração usa http e cookie não seguro por rodar apenas na rede local. Não exponha a porta 5678 à internet sem colocar HTTPS e autenticação na frente.
+- Acesso via https (Caddy `tls internal` na frente do n8n) com cookie seguro. Mesmo assim, não exponha a porta 5678 à internet: o certificado é de uma CA local, não uma CA pública, e não há autenticação de rede na frente.
 
 ## 🔄 Roadmap
 

@@ -29,21 +29,21 @@ Repositório par: [homelab-infrastructure-server](https://github.com/leonardodeb
 | CPU | Intel Skylake 4 núcleos (CPU ID 506E3) |
 | RAM | 16 GB |
 | Disco | SSD 240 GB |
-| Rede | Ethernet Intel (eno1), IP fixo 192.168.100.3 |
+| Rede | Ethernet Intel (eno1), IP fixo 192.168.15.3 |
 | SO | Ubuntu Server 24.04 LTS |
 
 ## 🏗️ Arquitetura
 
 ```
-                    Rede local 192.168.100.0/24
-                              │
-                              ▼
+                       Rede local 192.168.15.0/24
+                                 │
+                                 ▼
    ┌───────────────────────────────────────────────────────────┐
    │  Lenovo ThinkCentre M900                                   │
-   │  Ubuntu Server 24.04  (192.168.100.3)                      │
+   │  Ubuntu Server 24.04  (192.168.15.3)                       │
    │  Segurança: UFW, fail2ban, SSH hardening                   │
-   │                                                           │
-   │  Serviços:                                                │
+   │                                                             │
+   │  Serviços (cada um atrás de um Caddy, tls internal):       │
    │  ┌─────────────┐   ┌──────────────────┐                    │
    │  │  Portainer  │   │  n8n (automação) │                    │
    │  │   :9443     │   │      :5678       │                    │
@@ -135,6 +135,7 @@ bash setup-monitoring.sh
 - Segredos (arquivo `.env`) nunca são versionados, apenas os `.env.example`. As senhas reais ficam só no servidor.
 - Acesso aos serviços restrito à rede local. Nada exposto à internet sem HTTPS e autenticação na frente.
 - SSH com login root direto desabilitado e fail2ban barrando força bruta.
+- Portainer e n8n atrás de um Caddy dedicado cada um com `tls internal` (ver [`docker/portainer/`](docker/portainer/) e [`docker/n8n-stack/`](docker/n8n-stack/)): elimina o aviso de certificado autoassinado do navegador depois de importar a CA local de cada um (uma vez por dispositivo).
 
 ## 🔄 Roadmap
 

@@ -21,8 +21,6 @@ services:
     image: docker.n8n.io/n8nio/n8n:latest
     container_name: n8n
     restart: unless-stopped
-    ports:
-      - "5678:5678"
     environment:
       # Banco de dados: n8n usa o PostgreSQL acima em vez do SQLite padrão
       DB_TYPE: postgresdb
@@ -31,17 +29,18 @@ services:
       DB_POSTGRESDB_DATABASE: ${POSTGRES_DB}
       DB_POSTGRESDB_USER: ${POSTGRES_USER}
       DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD}
-      # Rede e acesso (somente rede local)
+      # Rede e acesso (somente rede local). TLS é feito pelo Caddy na frente,
+      # então o n8n continua ouvindo em http dentro da rede interna.
       N8N_HOST: ${N8N_HOST}
       N8N_PORT: 5678
       N8N_PROTOCOL: http
       NODE_ENV: production
-      WEBHOOK_URL: http://${N8N_HOST}:5678/
+      WEBHOOK_URL: https://${N8N_HOST}:5678/
       # Fuso horário
       GENERIC_TIMEZONE: America/Sao_Paulo
       TZ: America/Sao_Paulo
-      # Cookie seguro desligado, pois o acesso é por http na rede local
-      N8N_SECURE_COOKIE: "false"
+      # Cookie seguro ligado, pois o navegador acessa via https (Caddy)
+      N8N_SECURE_COOKIE: "true"
       # Chave de criptografia dos dados sensíveis (credenciais dos workflows)
       N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY}
     volumes:
@@ -52,9 +51,24 @@ services:
     networks:
       - n8n-net
 
+  caddy:
+    image: caddy:2.11.4-alpine
+    container_name: n8n-caddy
+    restart: unless-stopped
+    ports:
+      - "192.168.15.3:5678:5678"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - n8n-net
+
 volumes:
   postgres_data:
   n8n_data:
+  caddy_data:
+  caddy_config:
 
 networks:
   n8n-net:
