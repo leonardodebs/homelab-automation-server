@@ -11,7 +11,7 @@ Servidor Ubuntu 24.04 rodando serviços de automação e observabilidade em Dock
 | Item | Valor |
 |------|-------|
 | Hostname | vmlab |
-| IP fixo | 192.168.100.3 (eno1, cabo) |
+| IP fixo | 192.168.15.3 (eno1, cabo) |
 | Sistema | Ubuntu Server 24.04 LTS |
 | Kernel | 6.8.0-137-generic |
 | CPU | Intel Skylake 4 núcleos |
@@ -35,7 +35,7 @@ Servidor Ubuntu 24.04 rodando serviços de automação e observabilidade em Dock
 
 ### Base do sistema
 
-Instalação limpa do Ubuntu Server, com os primeiros ajustes de infraestrutura. A placa Wi-Fi Intel foi desabilitada via blacklist do `iwlwifi`, pois travava com crash de firmware (`NMI_INTERRUPT_LMAC_FATAL`) e não faz sentido em um servidor fixo com cabo. A rede migrou para a interface cabeada com IP fixo `192.168.100.3`. O kernel foi atualizado para o `6.8.0-137`, o disco foi expandido de 100 GB para os 232 GB completos do SSD (o instalador provisiona metade por padrão), e a verificação de firmware confirmou que nada faltava.
+Instalação limpa do Ubuntu Server, com os primeiros ajustes de infraestrutura. A placa Wi-Fi Intel foi desabilitada via blacklist do `iwlwifi`, pois travava com crash de firmware (`NMI_INTERRUPT_LMAC_FATAL`) e não faz sentido em um servidor fixo com cabo. A rede migrou para a interface cabeada com IP fixo `192.168.15.3`. O kernel foi atualizado para o `6.8.0-137`, o disco foi expandido de 100 GB para os 232 GB completos do SSD (o instalador provisiona metade por padrão), e a verificação de firmware confirmou que nada faltava.
 
 ### Segurança
 

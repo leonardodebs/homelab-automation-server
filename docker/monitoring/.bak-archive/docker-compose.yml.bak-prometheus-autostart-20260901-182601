@@ -2,7 +2,7 @@ services:
   prometheus:
     image: prom/prometheus:v3.13.2
     container_name: prometheus
-    restart: always
+    restart: unless-stopped
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=15d'
@@ -13,18 +13,9 @@ services:
       - ./prometheus/homelab-node-alerts.yml:/etc/prometheus/homelab-node-alerts.yml:ro
       - ./prometheus/openclaw-alerts.yml:/etc/prometheus/openclaw-alerts.yml:ro
       - ./prometheus/jobops-alerts.yml:/etc/prometheus/jobops-alerts.yml:ro
-      - ./prometheus/watchdog-alerts.yml:/etc/prometheus/watchdog-alerts.yml:ro
-      - ./prometheus/k3s-alerts.yml:/etc/prometheus/k3s-alerts.yml:ro
-      - ./prometheus/backrest-alerts.yml:/etc/prometheus/backrest-alerts.yml:ro
-      - ./prometheus/k3s-token:/etc/prometheus/k3s-token:ro
       - prometheus_data:/prometheus
     ports:
       - "192.168.15.3:9090:9090"
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
     networks:
       - monitoring
     depends_on:
@@ -34,14 +25,6 @@ services:
     container_name: alertmanager
     restart: unless-stopped
     user: "1000:1000"
-    # O resolver embutido do Docker (127.0.0.11) falhou em 31/08/2026 com
-    # "server misbehaving" e derrubou a entrega de 4 alertas por SMTP. O
-    # Alertmanager so precisa resolver smtp.gmail.com; apontar direto para
-    # resolvedores publicos remove essa dependencia. A descoberta de servico
-    # entre containers continua funcionando pelo 127.0.0.11.
-    dns:
-      - 1.1.1.1
-      - 8.8.8.8
     command:
       - '--config.file=/etc/alertmanager/alertmanager.yml'
       - '--storage.path=/alertmanager'
@@ -57,11 +40,6 @@ services:
       - no-new-privileges:true
     cap_drop:
       - ALL
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
     networks:
       - monitoring
   grafana:
@@ -80,11 +58,6 @@ services:
       - "192.168.15.3:3000:3000"
     depends_on:
       - prometheus
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
     networks:
       - monitoring
   node-exporter:
@@ -103,11 +76,6 @@ services:
       - /sys:/host/sys:ro
       - /:/rootfs:ro
       - ./textfile:/textfile:ro
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
     networks:
       - monitoring
   cadvisor:
@@ -123,11 +91,6 @@ services:
       - /sys:/sys:ro
       - /var/lib/docker/:/var/lib/docker:ro
       - /dev/disk/:/dev/disk:ro
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
     networks:
       - monitoring
   postgres-exporter:
@@ -136,11 +99,6 @@ services:
     restart: unless-stopped
     environment:
       DATA_SOURCE_NAME: "postgresql://n8n:${POSTGRES_PASSWORD}@postgres:5432/n8n?sslmode=disable"
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
     networks:
       - monitoring
       - n8n-net
@@ -159,11 +117,6 @@ services:
       - influxdb_data:/var/lib/influxdb
     ports:
       - "192.168.15.3:8086:8086"
-    logging:
-      driver: json-file
-      options:
-        max-size: 10m
-        max-file: "3"
     networks:
       - monitoring
 volumes:

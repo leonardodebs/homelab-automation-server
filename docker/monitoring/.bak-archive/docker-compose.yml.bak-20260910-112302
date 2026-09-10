@@ -15,7 +15,6 @@ services:
       - ./prometheus/jobops-alerts.yml:/etc/prometheus/jobops-alerts.yml:ro
       - ./prometheus/watchdog-alerts.yml:/etc/prometheus/watchdog-alerts.yml:ro
       - ./prometheus/k3s-alerts.yml:/etc/prometheus/k3s-alerts.yml:ro
-      - ./prometheus/backrest-alerts.yml:/etc/prometheus/backrest-alerts.yml:ro
       - ./prometheus/k3s-token:/etc/prometheus/k3s-token:ro
       - prometheus_data:/prometheus
     ports:

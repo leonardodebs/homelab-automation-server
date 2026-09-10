@@ -1,0 +1,38 @@
+# =============================================================================
+# Alertas do Backrest (garethgeorge/backrest), a UI web somente leitura sobre o
+# repositorio Restic em /srv/backup/restic no Dell.
+#
+# O Backrest NAO executa backups: quem faz isso e o systemd (homelab-backup.*).
+# O repositorio e montado ':ro --no-lock' no container, entao o Backrest apenas
+# navega snapshots, mostra estatisticas e restaura arquivos. Uma falha aqui nao
+# afeta o backup nem o restic-exporter; afeta so a interface grafica de
+# restauracao.
+#
+# O Backrest so escuta em 127.0.0.1:9898 (atras do Caddy), portanto o Prometheus
+# do Lenovo nao consegue raspar um /metrics dele. O sinal de vida vem do
+# cAdvisor do Dell (job cadvisor-dell), no mesmo padrao dos alertas
+# *ContainerAusente ja usados no projeto.
+#
+# Referencie em rule_files do prometheus.yml:
+#   - /etc/prometheus/backrest-alerts.yml
+# =============================================================================
+
+groups:
+  - name: backrest
+    rules:
+      # ---------------------------------------------------------------------
+      # Container fora do ar. severity=warning: o Backrest e uma conveniencia
+      # de restauracao, nao um caminho critico. O restic e o restic-exporter
+      # continuam funcionando sem ele. 'for: 15m' evita alarme durante um
+      # 'docker compose pull && up' na janela de manutencao.
+      # ---------------------------------------------------------------------
+      - alert: BackrestContainerAusente
+        expr: absent(container_last_seen{job="cadvisor-dell", name="backrest"})
+        for: 15m
+        labels:
+          severity: warning
+          service: backrest
+          server: dell
+        annotations:
+          summary: "Container do Backrest ausente no Dell"
+          description: "O container backrest nao aparece nas metricas do cAdvisor ha 15 minutos. A UI de restauracao esta indisponivel; o backup por systemd e o restic-exporter nao sao afetados. Verifique: docker ps --filter name=backrest e docker logs --tail 50 backrest."

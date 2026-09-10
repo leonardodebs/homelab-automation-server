@@ -10,7 +10,6 @@ rule_files:
   - /etc/prometheus/jobops-alerts.yml
   - /etc/prometheus/watchdog-alerts.yml
   - /etc/prometheus/k3s-alerts.yml
-  - /etc/prometheus/backrest-alerts.yml
 
 alerting:
   alertmanagers:

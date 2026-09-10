@@ -22,7 +22,7 @@ services:
     container_name: n8n
     restart: unless-stopped
     ports:
-      - "5678:5678"
+      - "192.168.15.3:5678:5678"
     environment:
       # Banco de dados: n8n usa o PostgreSQL acima em vez do SQLite padrão
       DB_TYPE: postgresdb

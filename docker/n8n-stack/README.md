@@ -103,7 +103,7 @@ docker compose logs -f
 Abra no navegador de qualquer máquina da rede local:
 
 ```
-http://192.168.100.3:5678
+http://192.168.15.3:5678
 ```
 
 No primeiro acesso, o n8n pede para criar a conta de dono (owner). Esse é o login de administrador do seu n8n. A partir daí você cria os workflows.

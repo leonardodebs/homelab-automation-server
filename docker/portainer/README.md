@@ -12,7 +12,7 @@ docker compose up -d
 ## Acesso
 
 ```
-https://192.168.100.3:9443
+https://192.168.15.3:9443
 ```
 
 Atenção: é https, com certificado self-signed (o navegador vai avisar, aceite). No primeiro acesso, crie o usuário admin (senha de 12 caracteres ou mais). A tela de criação expira em alguns minutos, então faça logo após subir. Se expirar, reinicie o container e recarregue:

@@ -29,7 +29,7 @@ Repositório par: [homelab-infrastructure-server](https://github.com/leonardodeb
 | CPU | Intel Skylake 4 núcleos (CPU ID 506E3) |
 | RAM | 16 GB |
 | Disco | SSD 240 GB |
-| Rede | Ethernet Intel (eno1), IP fixo 192.168.100.3 |
+| Rede | Ethernet Intel (eno1), IP fixo 192.168.15.3 |
 | SO | Ubuntu Server 24.04 LTS |
 
 ## 🏗️ Arquitetura
@@ -40,7 +40,7 @@ Repositório par: [homelab-infrastructure-server](https://github.com/leonardodeb
                               ▼
    ┌───────────────────────────────────────────────────────────┐
    │  Lenovo ThinkCentre M900                                   │
-   │  Ubuntu Server 24.04  (192.168.100.3)                      │
+   │  Ubuntu Server 24.04  (192.168.15.3)                      │
    │  Segurança: UFW, fail2ban, SSH hardening                   │
    │                                                           │
    │  Serviços:                                                │

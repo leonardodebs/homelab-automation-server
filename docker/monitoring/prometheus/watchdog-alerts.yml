@@ -1,0 +1,27 @@
+# =============================================================================
+# Watchdog (dead man's switch) da cadeia de alertas do HomeLab.
+#
+# Em 31/08/2026 quatro alertas reais (ResticExporterDown, NodeDellExporterDown,
+# CadvisorDellDown e JobOpsApiForaDoAr) foram descartados pelo Alertmanager com
+# "notify retry canceled" por falha de DNS no SMTP. Nada avisou: um sistema de
+# alertas em silencio e indistinguivel de um HomeLab saudavel.
+#
+# Este alerta dispara SEMPRE. O Alertmanager o envia em um receptor proprio a
+# cada 24h. A ausencia do e-mail diario e o sinal: se ele parar de chegar,
+# alguma etapa entre Prometheus, Alertmanager e Gmail quebrou.
+#
+# Referencie em rule_files do prometheus.yml:
+#   - /etc/prometheus/watchdog-alerts.yml
+# =============================================================================
+
+groups:
+  - name: watchdog
+    rules:
+      - alert: Watchdog
+        expr: vector(1)
+        labels:
+          severity: none
+          service: watchdog
+        annotations:
+          summary: "Cadeia de alertas do HomeLab operante"
+          description: "Este e o heartbeat diario. Ele confirma que o Prometheus esta avaliando regras e que o Alertmanager consegue entregar e-mail pelo Gmail. Se este aviso parar de chegar por mais de 24h, a cadeia de alertas quebrou e os demais alertas podem estar sendo descartados em silencio."

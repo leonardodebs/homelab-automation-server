@@ -20,4 +20,4 @@ Compressão paralela, usa todos os núcleos, mais rápido que o gzip de thread �
 
 ## Rede
 
-IP fixo 192.168.100.3 na interface cabeada (eno1). A placa Wi-Fi Intel foi desabilitada via blacklist do iwlwifi, pois travava com crash de firmware (NMI_INTERRUPT_LMAC_FATAL) e não faz sentido em um servidor fixo com cabo.
+IP fixo 192.168.15.3 na interface cabeada (eno1). A placa Wi-Fi Intel foi desabilitada via blacklist do iwlwifi, pois travava com crash de firmware (NMI_INTERRUPT_LMAC_FATAL) e não faz sentido em um servidor fixo com cabo.

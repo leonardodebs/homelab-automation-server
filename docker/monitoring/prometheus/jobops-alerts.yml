@@ -2,7 +2,7 @@ groups:
   - name: jobops
     rules:
       # A coleta é diária. Passando de 36h sem execução bem-sucedida, algo
-      # travou: o agendamento do n8n, a API ou o próprio pipeline.
+      # travou: o CronJob coleta-diaria, a API ou o próprio pipeline.
       - alert: JobOpsColetaParada
         expr: time() - jobops_pipeline_last_run_timestamp_seconds > 129600
         for: 10m
@@ -40,3 +40,41 @@ groups:
           severity: critical
         annotations:
           summary: "API do JobOps não responde ao Prometheus"
+
+      # O backup so avisa quando falha se alguem estiver olhando, e ninguem
+      # esta. O hostPath do CronJob exige o USB montado: se ele desmontar, o pod
+      # nem sobe, o Job falha todo dia e o silencio dura ate o dia em que o dump
+      # for necessario.
+      #
+      # 26h cobre o intervalo diario com folga para um atraso de agendamento.
+      - alert: JobOpsBackupParado
+        expr: time() - kube_cronjob_status_last_successful_time{namespace="jobops",cronjob="backup-postgres"} > 93600
+        for: 15m
+        labels:
+          severity: critical
+        annotations:
+          summary: "JobOps sem backup bem-sucedido há mais de 26h"
+          description: "Último dump em {{ $value | humanizeDuration }} atrás. Confira se /srv/backup está montado."
+
+      # Qualquer Job do namespace que termine em falha: a coleta do CronJob, o
+      # backup ou o worker de candidatura.
+      - alert: JobOpsJobFalhou
+        expr: kube_job_status_failed{namespace="jobops"} > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Job do JobOps falhou: {{ $labels.job_name }}"
+          description: "kubectl -n jobops logs job/{{ $labels.job_name }}"
+
+      # O volume nao tem cota, entao o crescimento anormal precisa ser visto
+      # cedo. A coleta diaria acrescenta alguns MB; dobrar em um dia significa
+      # que alguma coisa esta escrevendo em laco.
+      - alert: JobOpsBancoCrescendoRapido
+        expr: increase(jobops_database_bytes[24h]) > jobops_database_bytes * 0.5
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Banco do JobOps cresceu mais de 50% em 24h"
+          description: "O volume e local-path e nao tem cota: encher o disco derruba o no inteiro."

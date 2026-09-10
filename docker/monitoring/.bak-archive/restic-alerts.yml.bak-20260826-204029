@@ -23,45 +23,39 @@ groups:
           severity: critical
           service: restic
         annotations:
-          summary: "restic-exporter inacessivel em {{ $labels.instance }}"
-          description: "O Prometheus nao consegue raspar 192.168.15.2:8001 ha mais de 5 minutos. Verifique o container restic-exporter e a regra do UFW."
+          summary: "restic-exporter inacessivel no Dell"
+          description: "O Prometheus nao consegue raspar 192.168.100.2:8001 ha mais de 5 minutos. Verifique o container restic-exporter e a regra do UFW."
 
       # ---------------------------------------------------------------------
       # Backup atrasado. O snapshot mais recente passou da janela esperada.
       # 26h cobre o backup diario mais o RandomizedDelaySec de 5 min.
-      #
-      # O restic-exporter inclui client_version no label set. Quando o
-      # binario do restic e trocado (ex: 0.16.4 -> 0.19.1), o ultimo
-      # snapshot feito pela versao antiga vira uma serie propria que nunca
-      # mais avanca. Sem o max by (client_hostname, instance), essa serie
-      # orfa dispara o alerta para sempre mesmo com backups novos em dia.
       # ---------------------------------------------------------------------
       - alert: ResticBackupAtrasado
-        expr: (time() - max by (client_hostname, instance) (restic_backup_timestamp{job="restic"}) > 26 * 3600) and (time() - max by (client_hostname, instance) (restic_backup_timestamp{job="restic"}) <= 48 * 3600)
+        expr: (time() - restic_backup_timestamp{job="restic"} > 26 * 3600) and (time() - restic_backup_timestamp{job="restic"} <= 48 * 3600)
         for: 30m
         labels:
           severity: warning
           service: restic
         annotations:
-          summary: "Backup Restic atrasado em {{ $labels.client_hostname }}"
-          description: "O ultimo snapshot de {{ $labels.client_hostname }} tem {{ $value | humanizeDuration }}. O backup diario das 03:15 pode ter falhado. Verifique: systemctl status homelab-backup.service."
+          summary: "Backup Restic sem snapshot novo ha mais de 26h"
+          description: "O ultimo snapshot tem {{ $value | humanizeDuration }}. O backup diario das 03:15 pode ter falhado. Verifique: systemctl status homelab-backup.service."
 
       - alert: ResticBackupCritico
-        expr: time() - max by (client_hostname, instance) (restic_backup_timestamp{job="restic"}) > 48 * 3600
+        expr: time() - restic_backup_timestamp{job="restic"} > 48 * 3600
         for: 30m
         labels:
           severity: critical
           service: restic
         annotations:
-          summary: "Backup Restic critico em {{ $labels.client_hostname }}"
-          description: "O ultimo snapshot de {{ $labels.client_hostname }} tem {{ $value | humanizeDuration }}. Ja se passaram duas janelas diarias sem backup. Investigue o disco /srv/backup e o servico homelab-backup."
+          summary: "Backup Restic sem snapshot novo ha mais de 48h"
+          description: "O ultimo snapshot tem {{ $value | humanizeDuration }}. Ja se passaram duas janelas diarias sem backup. Investigue o disco /srv/backup e o servico homelab-backup."
 
       # ---------------------------------------------------------------------
       # Falha de integridade. restic_check_success == 0 significa que o check
       # de metadados apontou problema no repositorio.
       # ---------------------------------------------------------------------
       - alert: ResticCheckFalhou
-        expr: restic_check_success{job="restic"} == 0
+        expr: restic_check_success == 0
         for: 15m
         labels:
           severity: critical
@@ -88,7 +82,7 @@ groups:
       # O endpoint responde, mas a coleta inicial nao produziu metricas Restic.
       # ---------------------------------------------------------------------
       - alert: ResticExporterSemMetricas
-        expr: (up{job="restic"} == 1) unless on(job, instance) restic_backup_timestamp{job="restic"}
+        expr: (up{job="restic"} == 1) unless on() restic_backup_timestamp{job="restic"}
         for: 15m
         labels:
           severity: critical
@@ -102,7 +96,7 @@ groups:
       # operacao interrompida, e bloqueia o proximo backup ou prune.
       # ---------------------------------------------------------------------
       - alert: ResticLockPreso
-        expr: restic_locks_total{job="restic"} > 0
+        expr: restic_locks_total > 0
         for: 2h
         labels:
           severity: warning
@@ -126,9 +120,9 @@ groups:
           description: "Crescimento de {{ $value | humanize1024 }}B em 7 dias. Confirme se a manutencao semanal (prune) rodou no domingo."
 
 # =============================================================================
-# Exemplo opcional de alerta de disco do /srv/backup. O Node Exporter já está
-# implantado no Dell; habilite a regra abaixo em um grupo próprio se o ponto de
-# montagem aparecer separadamente nas métricas:
+# Alerta opcional de disco do /srv/backup.
+# Requer node_exporter no Dell (nao incluido). Se voce subir o node_exporter,
+# adicione a regra abaixo em um grupo proprio:
 #
 #   - alert: ResticDiscoBackupCheio
 #     expr: (node_filesystem_avail_bytes{mountpoint="/srv/backup"}

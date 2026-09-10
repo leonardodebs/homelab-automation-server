@@ -16,8 +16,23 @@ route:
     - alertname
     - instance
   group_wait: 30s
-  group_interval: 5m
+  # A janela de retentativa de entrega do Alertmanager e derivada do
+  # group_interval (group_interval + group_wait). Com os 5m originais, uma queda
+  # de SMTP de pouco mais de 5 minutos fazia o alerta ser DESCARTADO com
+  # "notify retry canceled" - foi o que aconteceu em 31/08/2026 com a falha de
+  # DNS. Com 10m a janela dobra para ~10m30s sem atrasar demais o agrupamento.
+  group_interval: 10m
   repeat_interval: 6h
+
+  routes:
+    # O heartbeat nao segue o agrupamento nem o repeat_interval dos alertas
+    # reais: ele tem receptor e cadencia propria, 1 e-mail por dia.
+    - receiver: gmail-watchdog
+      matchers:
+        - alertname = "Watchdog"
+      group_wait: 0s
+      group_interval: 10m
+      repeat_interval: 24h
 
 receivers:
   - name: gmail-homelab
@@ -28,3 +43,14 @@ receivers:
         headers:
           Subject: '[HomeLab] {{ .Status }} - {{ .CommonLabels.alertname }}'
         html: '{{ template "homelab.email.html" . }}'
+
+  - name: gmail-watchdog
+    email_configs:
+      - to: leonardodebs@gmail.com
+        from: leonardodebs@gmail.com
+        # O Watchdog dispara para sempre; um aviso de "resolvido" so chegaria se
+        # o Prometheus parasse, e nesse caso o Alertmanager tambem nao o enviaria.
+        send_resolved: false
+        headers:
+          Subject: '[HomeLab] heartbeat - cadeia de alertas operante'
+        html: '{{ template "homelab.watchdog.html" . }}'
