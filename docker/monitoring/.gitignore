@@ -10,3 +10,6 @@ prometheus/k3s-token
 
 # Metricas geradas em runtime pelo CronJob de backup
 textfile/finance-backup.prom
+
+# Metrica gerada em runtime pelo cron do host
+textfile/openclaw.prom
