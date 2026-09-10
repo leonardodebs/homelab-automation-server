@@ -35,15 +35,15 @@ Repositório par: [homelab-infrastructure-server](https://github.com/leonardodeb
 ## 🏗️ Arquitetura
 
 ```
-                    Rede local 192.168.100.0/24
-                              │
-                              ▼
+                       Rede local 192.168.15.0/24
+                                 │
+                                 ▼
    ┌───────────────────────────────────────────────────────────┐
    │  Lenovo ThinkCentre M900                                   │
-   │  Ubuntu Server 24.04  (192.168.15.3)                      │
+   │  Ubuntu Server 24.04  (192.168.15.3)                       │
    │  Segurança: UFW, fail2ban, SSH hardening                   │
-   │                                                           │
-   │  Serviços:                                                │
+   │                                                             │
+   │  Serviços (cada um atrás de um Caddy, tls internal):       │
    │  ┌─────────────┐   ┌──────────────────┐                    │
    │  │  Portainer  │   │  n8n (automação) │                    │
    │  │   :9443     │   │      :5678       │                    │
@@ -86,11 +86,13 @@ homelab-automation-server/
 ├── CHANGELOG.md         # Histórico de mudanças
 ├── docker/
 │   ├── setup/           # Scripts de provisionamento (rodar primeiro)
-│   │   ├── harden-server.sh      # Segurança: UFW, fail2ban, SSH, timezone
-│   │   ├── install-docker.sh     # Docker Engine e Compose
-│   │   └── install-n8n-backup.sh # Backup do n8n com systemd timer
+│   │   ├── harden-server.sh         # Segurança: UFW, fail2ban, SSH, timezone
+│   │   ├── install-docker.sh        # Docker Engine e Compose
+│   │   ├── install-n8n-backup.sh    # Backup do n8n com systemd timer
+│   │   └── install-docker-prune.sh  # Limpeza semanal de imagens/cache
 │   ├── n8n-stack/       # n8n + PostgreSQL (Compose)
 │   ├── n8n-backup/      # Script de backup do banco
+│   ├── docker-prune/    # Limpeza automática de imagens e cache de build
 │   ├── portainer/       # Gerência visual dos containers
 │   └── monitoring/      # Prometheus + Grafana + exporters
 └── docs/                # Documentação do servidor e decisões
@@ -128,6 +130,10 @@ bash install-n8n-backup.sh
 # 7. Subir o monitoramento (Prometheus + Grafana)
 cd ../monitoring
 bash setup-monitoring.sh
+
+# 8. Agendar a limpeza semanal do Docker
+cd ../setup
+bash install-docker-prune.sh
 ```
 
 ## 🔒 Segurança
@@ -135,6 +141,7 @@ bash setup-monitoring.sh
 - Segredos (arquivo `.env`) nunca são versionados, apenas os `.env.example`. As senhas reais ficam só no servidor.
 - Acesso aos serviços restrito à rede local. Nada exposto à internet sem HTTPS e autenticação na frente.
 - SSH com login root direto desabilitado e fail2ban barrando força bruta.
+- Portainer e n8n atrás de um Caddy dedicado cada um com `tls internal` (ver [`docker/portainer/`](docker/portainer/) e [`docker/n8n-stack/`](docker/n8n-stack/)): elimina o aviso de certificado autoassinado do navegador depois de importar a CA local de cada um (uma vez por dispositivo).
 
 ## 🔄 Roadmap
 

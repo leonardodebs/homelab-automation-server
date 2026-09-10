@@ -69,9 +69,9 @@ O script detecta a rede do Docker, lê a senha do Postgres do `.env` do n8n-stac
 | Grafana | http://192.168.15.3:3000 | admin e a senha gerada |
 | Prometheus | http://192.168.15.3:9090 | sem login |
 
-No Grafana, dois dashboards já aparecem na lista:
+No Grafana, dois dashboards deste repositório já aparecem na lista (além de outros de projetos separados no mesmo host, como o "Dell Overview" do par `homelab-infrastructure-server`):
 
-- **Homelab Overview** — servidor, containers e PostgreSQL.
+- **Homelab Lenovo Overview** — resumo executivo, CPU, memória (com swap), carga, rede, temperatura dos sensores, disco (uso e I/O), containers (CPU/memória/rede) e PostgreSQL. Layout espelhado no "Dell Overview" do repositório par, com variáveis de filtro (`$interface`, `$disk`, `$container`) pra não depender de scroll pra achar um container ou disco específico.
 - **Rede (ntopng)** — tráfego, protocolos L7, top talkers por host e um painel de segurança/anomalias (alertas ativos, score da rede, hosts anômalos). Os nomes dos hosts vêm de um mapeamento manual dentro do dashboard (IP → nome), a partir das concessões fixas do DHCP — se um IP mudar, o nome fica desatualizado até alguém corrigir o mapeamento no JSON.
 
 No Prometheus, a página Status > Targets mostra os exporters e se estão sendo coletados (todos devem estar "UP").
@@ -124,7 +124,7 @@ monitoring/
         │   └── influxdb.yml         # Datasource do InfluxDB (dados do ntopng)
         └── dashboards/
             ├── dashboards.yml       # Provider de dashboards
-            ├── homelab-overview.json # Servidor, containers, PostgreSQL
+            ├── lenovo-overview.json # Servidor, disco, temperatura, containers, PostgreSQL
             └── network-overview.json # Rede e segurança (ntopng)
 ```
 
