@@ -6,6 +6,8 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--storage.tsdb.retention.time=15d'
+      # Caddy termina o TLS na frente; a URL externa reflete isso
+      - '--web.external-url=https://192.168.15.3:9090/'
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - ./prometheus/restic-alerts.yml:/etc/prometheus/restic-alerts.yml:ro
@@ -18,8 +20,6 @@ services:
       - ./prometheus/backrest-alerts.yml:/etc/prometheus/backrest-alerts.yml:ro
       - ./prometheus/k3s-token:/etc/prometheus/k3s-token:ro
       - prometheus_data:/prometheus
-    ports:
-      - "192.168.15.3:9090:9090"
     logging:
       driver: json-file
       options:
@@ -73,11 +73,11 @@ services:
       GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD}
       GF_USERS_ALLOW_SIGN_UP: "false"
       INFLUXDB_USER_PASSWORD: ${INFLUXDB_USER_PASSWORD}
+      # Caddy termina o TLS na frente; links e redirects usam https
+      GF_SERVER_ROOT_URL: "https://192.168.15.3:3000/"
     volumes:
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
       - grafana_data:/var/lib/grafana
-    ports:
-      - "192.168.15.3:3000:3000"
     depends_on:
       - prometheus
     logging:
@@ -158,6 +158,8 @@ services:
     volumes:
       - influxdb_data:/var/lib/influxdb
     ports:
+      # Fica em http: quem escreve aqui e o ntopng do Dell (maquina-a-maquina),
+      # nao o navegador. TLS aqui exigiria configurar o exporter do ntopng.
       - "192.168.15.3:8086:8086"
     logging:
       driver: json-file
@@ -166,10 +168,27 @@ services:
         max-file: "3"
     networks:
       - monitoring
+
+  caddy:
+    image: caddy:2.11.4-alpine
+    container_name: monitoring-caddy
+    restart: unless-stopped
+    ports:
+      - "192.168.15.3:3000:3000"
+      - "192.168.15.3:9090:9090"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - monitoring
+
 volumes:
   prometheus_data:
   grafana_data:
   influxdb_data:
+  caddy_data:
+  caddy_config:
 networks:
   monitoring:
   # Rede do n8n-stack, para o postgres-exporter alcançar o banco.

@@ -61,7 +61,7 @@ Repositório par: [homelab-infrastructure-server](https://github.com/leonardodeb
    │                     ▼                                      │
    │        ┌────────────────┐      ┌──────────────┐            │
    │        │  Prometheus    │─────▶│   Grafana    │            │
-   │        │    :9090       │      │    :3000     │            │
+   │        │  :9090 (Caddy) │      │ :3000 (Caddy)│            │
    │        └────────────────┘      └──────────────┘            │
    └───────────────────────────────────────────────────────────┘
 ```
@@ -141,7 +141,7 @@ bash install-docker-prune.sh
 - Segredos (arquivo `.env`) nunca são versionados, apenas os `.env.example`. As senhas reais ficam só no servidor.
 - Acesso aos serviços restrito à rede local. Nada exposto à internet sem HTTPS e autenticação na frente.
 - SSH com login root direto desabilitado e fail2ban barrando força bruta.
-- Portainer e n8n atrás de um Caddy dedicado cada um com `tls internal` (ver [`docker/portainer/`](docker/portainer/) e [`docker/n8n-stack/`](docker/n8n-stack/)): elimina o aviso de certificado autoassinado do navegador depois de importar a CA local de cada um (uma vez por dispositivo).
+- Portainer, n8n, Grafana e Prometheus atrás de Caddy com `tls internal` (um Caddy por stack: [`docker/portainer/`](docker/portainer/), [`docker/n8n-stack/`](docker/n8n-stack/), [`docker/monitoring/`](docker/monitoring/)). Depois de importar as CAs locais uma vez por dispositivo, HTTPS sem aviso. Só o InfluxDB fica em http (comunicação máquina-a-máquina com o ntopng).
 
 ## 🔄 Roadmap
 

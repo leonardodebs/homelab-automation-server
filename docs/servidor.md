@@ -25,9 +25,9 @@ Servidor Ubuntu 24.04 rodando serviços de automação e observabilidade em Dock
 | n8n | 5678 (https, Caddy `tls internal`) | Automação de workflows |
 | PostgreSQL | interna | Banco de dados do n8n |
 | Portainer | 9443 (https, Caddy `tls internal`) | Gerência visual dos containers |
-| Grafana | 3000 | Dashboards de observabilidade |
-| Prometheus | 9090 | Coleta e armazenamento de métricas |
-| InfluxDB | 8086 | Recebe métricas de rede do ntopng (roda no Dell, `192.168.15.2`) |
+| Grafana | 3000 (https, monitoring-caddy) | Dashboards de observabilidade |
+| Prometheus | 9090 (https, monitoring-caddy) | Coleta e armazenamento de métricas |
+| InfluxDB | 8086 (http) | Recebe métricas de rede do ntopng (roda no Dell, `192.168.15.2`) |
 | node_exporter | interna | Métricas do servidor |
 | cAdvisor | interna | Métricas dos containers |
 | postgres_exporter | interna | Métricas do PostgreSQL |
@@ -46,7 +46,7 @@ A base de hardening foi aplicada e está registrada como código no script `setu
 
 Docker Engine e Compose instalados da fonte oficial. Os serviços foram organizados em projetos separados, cada um com seu Compose e README. O n8n usa PostgreSQL como banco (em vez do SQLite padrão), para robustez e backup no padrão Postgres. O Portainer dá visão web dos containers.
 
-Portainer e n8n ficam atrás de um Caddy dedicado cada um (`tls internal`): elimina o certificado autoassinado nativo e o aviso do navegador, ao custo de precisar importar a CA local de cada Caddy uma vez por dispositivo (ver `docker/portainer/README.md` e `docker/n8n-stack/README.md`).
+Portainer, n8n, Grafana e Prometheus ficam atrás de Caddy com `tls internal` (um por stack: `portainer-caddy`, `n8n-caddy`, `monitoring-caddy`): elimina o certificado autoassinado nativo e o aviso do navegador, ao custo de importar as CAs locais uma vez por dispositivo (ver `docker/portainer/README.md`). Só o InfluxDB fica em http — quem fala com ele é o ntopng, não o navegador.
 
 ### Backup
 
@@ -61,11 +61,11 @@ O Netdata foi avaliado primeiro, mas a escolha final foi o stack padrão do merc
 | Porta | Serviço |
 |-------|---------|
 | 22 | SSH |
-| 3000 | Grafana |
-| 5678 | n8n (Caddy) |
+| 3000 | Grafana (monitoring-caddy) |
+| 5678 | n8n (n8n-caddy) |
 | 8086 | InfluxDB (recebe do ntopng no Dell) |
-| 9090 | Prometheus |
-| 9443 | Portainer (Caddy) |
+| 9090 | Prometheus (monitoring-caddy) |
+| 9443 | Portainer (portainer-caddy) |
 
 ## Reconstrução
 

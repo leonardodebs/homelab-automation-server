@@ -29,14 +29,16 @@ O Grafana já vem com os datasources e os dashboards provisionados, prontos no p
 
 ```
    node_exporter ─┐
-   cAdvisor ───────┤──▶  Prometheus  ──▶┐
-   postgres_exporter ┘   (coleta e      │
-                          armazena)     ├──▶  Grafana
-   ntopng (192.168.15.2) ──▶ InfluxDB ──┘    (dashboards)
-                             (recebe via rede)
+   cAdvisor ───────┤──▶  Prometheus ──┐        ┌─ Caddy :9090 ─┐
+   postgres_exporter ┘   (:9090 int.) │        │  (tls internal)│
+                                      ├─ Grafana ─ Caddy :3000 ─┼─▶ navegador
+   ntopng (192.168.15.2) ──▶ InfluxDB ┘  (:3000 int.)           │   (https)
+                             (:8086, recebe via rede, http)
 ```
 
 O Prometheus faz scrape dos exporters a cada 15 segundos e guarda 15 dias de histórico. O InfluxDB só recebe (não faz scrape): o ntopng do outro servidor escreve direto nele pela rede. O Grafana lê os dois e desenha os painéis.
+
+Grafana e Prometheus ficam só na rede interna do Docker; um Caddy dedicado (`monitoring-caddy`, `tls internal`) termina o HTTPS nas portas 3000 e 9090. O InfluxDB continua em http porque quem fala com ele é o ntopng (máquina-a-máquina), não o navegador.
 
 ## 🛠️ Componentes
 
@@ -49,7 +51,7 @@ O Prometheus faz scrape dos exporters a cada 15 segundos e guarda 15 dias de his
 | cAdvisor | gcr.io/cadvisor/cadvisor | interna | Métricas dos containers |
 | postgres_exporter | prometheuscommunity/postgres-exporter | interna | Métricas do PostgreSQL |
 
-Grafana (3000), Prometheus (9090) e InfluxDB (8086) são expostos ao host — o InfluxDB precisa estar acessível pela rede local porque quem escreve nele (ntopng) está em outra máquina. Os exporters ficam na rede interna, acessíveis apenas pelo Prometheus.
+O `monitoring-caddy` publica 3000 (Grafana) e 9090 (Prometheus) em https; o InfluxDB (8086) fica em http porque só o ntopng fala com ele. Os exporters ficam na rede interna, acessíveis apenas pelo Prometheus.
 
 ## 🚀 Instalação
 
@@ -66,8 +68,18 @@ O script detecta a rede do Docker, lê a senha do Postgres do `.env` do n8n-stac
 
 | Serviço | URL | Login |
 |---------|-----|-------|
-| Grafana | http://192.168.15.3:3000 | admin e a senha gerada |
-| Prometheus | http://192.168.15.3:9090 | sem login |
+| Grafana | https://192.168.15.3:3000 | admin e a senha gerada |
+| Prometheus | https://192.168.15.3:9090 | sem login |
+| InfluxDB | http://192.168.15.3:8086 | admin (ver `.env`) |
+
+É https com CA local do Caddy (`monitoring-caddy`). O navegador avisa até você importar essa CA como raiz confiável — mesmo procedimento do Portainer/n8n (ver `docker/portainer/README.md`). Para importar as três CAs de uma vez, junte os `root.crt` num arquivo só:
+
+```bash
+for c in portainer-caddy n8n-caddy monitoring-caddy; do
+  docker exec $c cat /data/caddy/pki/authorities/local/root.crt
+done > homelab-cas.crt
+# copie homelab-cas.crt para a máquina cliente e importe como raiz confiável
+```
 
 No Grafana, dois dashboards deste repositório já aparecem na lista (além de outros de projetos separados no mesmo host, como o "Dell Overview" do par `homelab-infrastructure-server`):
 
@@ -89,7 +101,7 @@ Além do dashboard provisionado, dá para importar dashboards prontos da comunid
 ## 🔒 Segurança
 
 - As credenciais ficam no `.env`, que está no `.gitignore` e nunca vai para o Git. Apenas o `.env.example` é versionado.
-- Acesso liberado só na rede local. Não exponha o Grafana à internet sem repensar autenticação e HTTPS.
+- Grafana e Prometheus atrás do `monitoring-caddy` com `tls internal` (CA local). Ainda assim, acesso só na rede local — o certificado é de CA local, não pública, e o Prometheus não tem autenticação.
 
 ## 🔧 Operação
 
@@ -112,6 +124,7 @@ docker compose down
 ```
 monitoring/
 ├── docker-compose.yml
+├── Caddyfile                       # monitoring-caddy: https em 3000 e 9090
 ├── setup-monitoring.sh
 ├── .env.example
 ├── .gitignore

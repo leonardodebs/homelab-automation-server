@@ -9,5 +9,8 @@
 # Logs
 *.log
 
+# Certificados extraídos dos Caddy (CA local, específica de cada deploy)
+*.crt
+
 # Sistema
 .DS_Store

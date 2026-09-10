@@ -88,8 +88,8 @@ log "Arquivo .env gravado."
 # 4: Liberar as portas no firewall
 # ============================================================
 info "Liberando as portas 3000 (Grafana) e 9090 (Prometheus)..."
-sudo ufw allow 3000/tcp comment 'grafana' >/dev/null 2>&1 || true
-sudo ufw allow 9090/tcp comment 'prometheus' >/dev/null 2>&1 || true
+sudo ufw allow 3000/tcp comment 'grafana (via monitoring-caddy)' >/dev/null 2>&1 || true
+sudo ufw allow 9090/tcp comment 'prometheus (via monitoring-caddy)' >/dev/null 2>&1 || true
 log "Portas liberadas."
 
 # ============================================================
@@ -102,11 +102,14 @@ log "Stack no ar."
 echo "==============================================="
 log "Monitoramento instalado."
 echo ""
-echo "Grafana:     http://192.168.15.3:3000"
+echo "Grafana:     https://192.168.15.3:3000   (Caddy tls internal)"
 echo "  usuário:   ${GRAF_USER}"
 echo "  senha:     ${GRAF_PASS}"
 echo ""
-echo "Prometheus:  http://192.168.15.3:9090"
+echo "Prometheus:  https://192.168.15.3:9090   (Caddy tls internal)"
+echo ""
+echo "Importe a CA do monitoring-caddy uma vez para o navegador parar de avisar:"
+echo "  docker exec monitoring-caddy cat /data/caddy/pki/authorities/local/root.crt"
 echo ""
 echo "Os dashboards 'Homelab Lenovo Overview' e 'Rede (ntopng)' já vêm provisionados no Grafana."
 echo "Guarde a senha do Grafana no KeePass."
