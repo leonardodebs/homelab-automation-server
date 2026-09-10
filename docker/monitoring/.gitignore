@@ -13,3 +13,7 @@ textfile/finance-backup.prom
 
 # Metrica gerada em runtime pelo cron do host
 textfile/openclaw.prom
+
+# Backups manuais de edicao, nao versionar
+.bak-archive/
+*.bak-*
