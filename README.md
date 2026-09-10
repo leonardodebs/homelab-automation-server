@@ -86,11 +86,13 @@ homelab-automation-server/
 ├── CHANGELOG.md         # Histórico de mudanças
 ├── docker/
 │   ├── setup/           # Scripts de provisionamento (rodar primeiro)
-│   │   ├── harden-server.sh      # Segurança: UFW, fail2ban, SSH, timezone
-│   │   ├── install-docker.sh     # Docker Engine e Compose
-│   │   └── install-n8n-backup.sh # Backup do n8n com systemd timer
+│   │   ├── harden-server.sh         # Segurança: UFW, fail2ban, SSH, timezone
+│   │   ├── install-docker.sh        # Docker Engine e Compose
+│   │   ├── install-n8n-backup.sh    # Backup do n8n com systemd timer
+│   │   └── install-docker-prune.sh  # Limpeza semanal de imagens/cache
 │   ├── n8n-stack/       # n8n + PostgreSQL (Compose)
 │   ├── n8n-backup/      # Script de backup do banco
+│   ├── docker-prune/    # Limpeza automática de imagens e cache de build
 │   ├── portainer/       # Gerência visual dos containers
 │   └── monitoring/      # Prometheus + Grafana + exporters
 └── docs/                # Documentação do servidor e decisões
@@ -128,6 +130,10 @@ bash install-n8n-backup.sh
 # 7. Subir o monitoramento (Prometheus + Grafana)
 cd ../monitoring
 bash setup-monitoring.sh
+
+# 8. Agendar a limpeza semanal do Docker
+cd ../setup
+bash install-docker-prune.sh
 ```
 
 ## 🔒 Segurança
