@@ -4,3 +4,9 @@
 # Sistema
 *.log
 .DS_Store
+
+# Token de leitura do cluster k3s
+prometheus/k3s-token
+
+# Metricas geradas em runtime pelo CronJob de backup
+textfile/finance-backup.prom

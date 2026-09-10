@@ -1,0 +1,203 @@
+groups:
+  - name: k3s-cluster
+    rules:
+      # O raspador caiu: sem isto, todos os alertas abaixo ficariam mudos
+      # e a ausência de alerta seria confundida com saúde.
+      - alert: K3sStateMetricsDown
+        expr: up{job="k3s-state"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          site: homelab
+        annotations:
+          summary: "kube-state-metrics inacessível"
+          description: "O Prometheus não consegue raspar o estado do cluster k3s há 5 minutos. Os demais alertas do cluster estão cegos."
+
+      - alert: K3sKubeletDown
+        expr: up{job="k3s-kubelet"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          site: homelab
+        annotations:
+          summary: "kubelet do k3s inacessível"
+          description: "Sem métricas de CPU e memória por pod há 5 minutos. Pode ser token expirado ou k3s parado."
+
+      - alert: K3sNodeNotReady
+        expr: kube_node_status_condition{condition="Ready",status="true"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          site: homelab
+        annotations:
+          summary: "Nó {{ $labels.node }} não está Ready"
+          description: "O nó do cluster saiu do estado Ready. Com um nó só, isso significa cluster inteiro fora."
+
+  - name: k3s-workloads
+    rules:
+      - alert: K3sPodCrashLooping
+        # Mais de um reinício em 15 minutos indica falha recorrente, não
+        # um restart pontual de deploy.
+        expr: increase(kube_pod_container_status_restarts_total[15m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          site: homelab
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} reiniciando"
+          description: "O container {{ $labels.container }} reiniciou {{ $value | printf \"%.0f\" }}x em 15 minutos."
+
+      - alert: K3sPodNotReady
+        expr: |
+          sum by (namespace, pod) (
+            kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}
+          ) > 0
+        for: 15m
+        labels:
+          severity: warning
+          site: homelab
+        annotations:
+          summary: "Pod {{ $labels.namespace }}/{{ $labels.pod }} fora do ar"
+          description: "O pod está em estado não-pronto há 15 minutos."
+
+      - alert: K3sDeploymentReplicasMismatch
+        expr: |
+          kube_deployment_spec_replicas
+            != kube_deployment_status_replicas_available
+        for: 15m
+        labels:
+          severity: warning
+          site: homelab
+        annotations:
+          summary: "Deployment {{ $labels.namespace }}/{{ $labels.deployment }} degradado"
+          description: "Réplicas desejadas e disponíveis divergem há 15 minutos."
+
+      - alert: K3sPersistentVolumeFillingUp
+        # O PVC do Postgres é o único ponto do cluster com estado.
+        # Encher significa perda de escrita no banco.
+        expr: |
+          kubelet_volume_stats_available_bytes
+            / kubelet_volume_stats_capacity_bytes < 0.15
+        for: 10m
+        labels:
+          severity: warning
+          site: homelab
+        annotations:
+          summary: "Volume {{ $labels.persistentvolumeclaim }} com pouco espaço"
+          description: "Menos de 15% livre no PVC do namespace {{ $labels.namespace }}."
+
+      - alert: K3sPersistentVolumeCritical
+        expr: |
+          kubelet_volume_stats_available_bytes
+            / kubelet_volume_stats_capacity_bytes < 0.05
+        for: 5m
+        labels:
+          severity: critical
+          site: homelab
+        annotations:
+          summary: "Volume {{ $labels.persistentvolumeclaim }} quase cheio"
+          description: "Menos de 5% livre. O Postgres para de aceitar escrita quando o volume enche."
+
+  - name: finance-app
+    rules:
+      - alert: FinanceApiDown
+        expr: up{job="finance-app"} == 0
+        for: 3m
+        labels:
+          severity: critical
+          site: homelab
+        annotations:
+          summary: "API do my-finance-hub fora do ar"
+          description: "O endpoint /api/metrics não responde há 3 minutos."
+
+      - alert: FinanceDatabaseDown
+        expr: finance_database_up == 0
+        for: 3m
+        labels:
+          severity: critical
+          site: homelab
+        annotations:
+          summary: "my-finance-hub sem banco de dados"
+          description: "A API está de pé mas não consegue falar com o Postgres."
+
+      - alert: FinanceHighErrorRate
+        # Só 5xx: erro 4xx é a pessoa mandando request inválido, não falha nossa.
+        expr: |
+          sum(rate(http_request_duration_seconds_count{job="finance-app",status=~"5.."}[5m]))
+            /
+          sum(rate(http_request_duration_seconds_count{job="finance-app"}[5m]))
+            > 0.05
+        for: 10m
+        labels:
+          severity: warning
+          site: homelab
+        annotations:
+          summary: "my-finance-hub com muitos erros 5xx"
+          description: "Mais de 5% das requisições estão falhando há 10 minutos."
+
+      - alert: FinanceSlowRequests
+        # p95 acima de 2s numa API que normalmente responde em dezenas de ms.
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (rate(http_request_duration_seconds_bucket{job="finance-app"}[5m]))
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          site: homelab
+        annotations:
+          summary: "my-finance-hub lento"
+          description: "p95 de latência acima de 2s há 10 minutos."
+
+  - name: finance-backup
+    rules:
+      - alert: FinanceBackupStale
+        # 26h em vez de 24h: dá folga para atraso de agendamento sem
+        # deixar passar um dia inteiro sem backup.
+        expr: time() - finance_backup_last_success_timestamp_seconds > 26 * 3600
+        for: 30m
+        labels:
+          severity: warning
+          site: homelab
+        annotations:
+          summary: "Backup do my-finance-hub atrasado"
+          description: "O último backup bem-sucedido foi há {{ $value | humanizeDuration }}."
+
+      - alert: FinanceBackupUsbCopyFailed
+        # O dump local até existe, mas sem cópia externa o backup deixa de
+        # proteger contra perda do disco — que é o motivo dele existir.
+        expr: finance_backup_usb_copy_success == 0
+        for: 10m
+        labels:
+          severity: critical
+          site: homelab
+        annotations:
+          summary: "Backup do my-finance-hub sem cópia no disco externo"
+          description: "O pendrive provavelmente não está montado. O dump local existe, mas não sobrevive à perda do disco do nó."
+
+      - alert: FinanceBackupMetricMissing
+        # Ausência de métrica não é ausência de problema: se o CronJob
+        # nunca rodou, os alertas acima ficariam mudos para sempre.
+        expr: absent(finance_backup_last_success_timestamp_seconds)
+        for: 2h
+        labels:
+          severity: warning
+          site: homelab
+        annotations:
+          summary: "Nenhuma métrica de backup do my-finance-hub"
+          description: "O CronJob pode não estar rodando, ou o textfile collector não está lendo o arquivo."
+
+      - alert: FinanceBackupShrank
+        # Queda abrupta de tamanho costuma indicar dump truncado ou perda
+        # de dados, não economia de espaço.
+        expr: |
+          finance_backup_size_bytes
+            < 0.5 * avg_over_time(finance_backup_size_bytes[7d])
+        for: 1h
+        labels:
+          severity: warning
+          site: homelab
+        annotations:
+          summary: "Backup do my-finance-hub encolheu pela metade"
+          description: "Último dump com {{ $value | humanize1024 }}B, menos da metade da média da semana."
