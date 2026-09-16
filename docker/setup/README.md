@@ -36,6 +36,14 @@ bash install-docker-prune.sh
 
 Grava o script de limpeza, roda um teste e agenda um systemd timer semanal que remove imagens e cache de build sem uso com mais de 7 dias. Detalhes em [`../docker-prune/`](../docker-prune/).
 
+### 5. MOTD do painel de status
+
+```bash
+sudo install -m 755 -o root -g root motd-lenovo-automation.sh /etc/update-motd.d/01-lenovo-automation
+```
+
+Banner que aparece a cada login SSH: CPU/RAM/disco/temperatura, e o status (ONLINE/OFFLINE) dos serviços em Docker e dos deployments no k3s (JobOps, Finance), com timeout curto pra não travar o login se o k3s estiver lento. Precisa de `sudo` porque `/etc/update-motd.d/` é `root`, então roda manual — não faz parte do `install-*.sh` idempotente dos outros passos.
+
 ## Depois do setup
 
 Suba os serviços na ordem:
