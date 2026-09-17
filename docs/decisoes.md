@@ -2,6 +2,12 @@
 
 Registro das escolhas técnicas feitas na montagem deste servidor.
 
+## Por que o hostname mudou de `vmlab` para `automation`
+
+`vmlab` não fazia mais sentido: nunca rodou VM nenhuma, sempre foi Docker + k3s direto no host. Renomeado para `automation`, combinando com `sentinel` (o Dell, `homelab-infrastructure-server`) — um constrói/roda automação, o outro vigia a rede.
+
+Antes de renomear, foi confirmado que nada crítico dependia do hostname: todo serviço em Docker Compose é publicado no IP fixo (`192.168.15.3`), não no nome, e o cluster k3s registra o node com `--node-name vmlab` **fixado como texto literal** no systemd (`/etc/systemd/system/k3s.service`), não derivado do hostname do SO. Por isso, o node do k3s **continua se chamando `vmlab`** mesmo depois do `hostnamectl set-hostname automation` — de propósito: os 4 PersistentVolumes do JobOps e do Finance (Postgres, Redis) usam `nodeAffinity` presa a esse nome exato via local-path-provisioner. Renomear o node também exigiria migrar essa afinidade, risco desnecessário para um cluster de único nó. Rebatizar o node é tarefa separada, só se algum dia valer a pena.
+
 ## Por que Docker puro e não Proxmox (nesta fase)
 
 A máquina começou como Ubuntu Server com Docker para ter serviços no ar rapidamente, sem formatar. O plano é migrar para Proxmox depois. O que foi feito com Docker Compose migra sem retrabalho, os mesmos containers sobem dentro de uma VM ou LXC.

@@ -1,4 +1,4 @@
-# Alertas de CPU, memoria e disco do servidor Lenovo (vmlab).
+# Alertas de CPU, memoria e disco do servidor Lenovo (automation).
 groups:
   - name: homelab-node
     rules:

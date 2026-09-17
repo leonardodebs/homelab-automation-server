@@ -10,7 +10,7 @@ Servidor Ubuntu 24.04 rodando serviços de automação e observabilidade em Dock
 
 | Item | Valor |
 |------|-------|
-| Hostname | vmlab |
+| Hostname | automation (renomeado de `vmlab`) |
 | IP fixo | 192.168.15.3 (eno1, cabo) |
 | Sistema | Ubuntu Server 24.04 LTS |
 | Kernel | 6.8.0-137-generic |
