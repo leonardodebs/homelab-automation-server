@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cursos</title>
+<style>
+  :root {
+    --bg: #0f0f10;
+    --card: #1a1a1c;
+    --card-hover: #232326;
+    --border: #2a2a2e;
+    --text: #f1f1f1;
+    --muted: #9a9aa2;
+    --accent: #0ea5e9;
+    --accent2: #22d3ee;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 40px 24px 80px;
+  }
+  header {
+    max-width: 1100px;
+    margin: 0 auto 40px;
+  }
+  header h1 {
+    font-size: 1.9rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    display: inline-block;
+  }
+  header p {
+    color: var(--muted);
+    margin-top: 6px;
+    font-size: .92rem;
+  }
+  main { max-width: 1100px; margin: 0 auto; }
+  .categoria { margin-bottom: 44px; }
+  .categoria h2 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    text-decoration: none;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: background .15s, border-color .15s, transform .15s;
+  }
+  .card:hover {
+    background: var(--card-hover);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+  }
+  .card-emoji { font-size: 2rem; }
+  .card-title { font-weight: 700; font-size: 1rem; line-height: 1.35; }
+  .card-sub { color: var(--muted); font-size: .8rem; }
+  footer {
+    max-width: 1100px;
+    margin: 60px auto 0;
+    color: var(--muted);
+    font-size: .78rem;
+    border-top: 1px solid var(--border);
+    padding-top: 16px;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>📚 Cursos</h1>
+  <p>Portal local — servido pelo Lenovo (automation), rede interna apenas.</p>
+</header>
+<main>
+
+  <section class="categoria">
+    <h2>IA</h2>
+    <div class="grid">
+      <a class="card" href="01 - IA/BACKROOM AGENTEGPT - DougDmarco/backroom-player.html">
+        <div class="card-emoji">🤖</div>
+        <div class="card-title">BACKROOM AGENTEGPT</div>
+        <div class="card-sub">DougDmarco</div>
+      </a>
+      <a class="card" href="01 - IA/Hashtag Treinamentos - Agentes de IA com N8N/hashtag-player.html">
+        <div class="card-emoji">🔗</div>
+        <div class="card-title">Agentes de IA com N8N</div>
+        <div class="card-sub">Hashtag Treinamentos</div>
+      </a>
+    </div>
+  </section>
+
+  <section class="categoria">
+    <h2>TI</h2>
+    <div class="grid">
+      <a class="card" href="02 - TI/Bootcamp Microserviços, Docker, Kubernetes, Jenkins e Helm/bootcamp-microservicos-player.html">
+        <div class="card-emoji">🐳</div>
+        <div class="card-title">Bootcamp Microsserviços, Docker, Kubernetes, Jenkins e Helm</div>
+        <div class="card-sub">Udemy</div>
+      </a>
+      <a class="card" href="02 - TI/Especialista Python/especialista-python-player.html">
+        <div class="card-emoji">🐍</div>
+        <div class="card-title">Especialista Python</div>
+      </a>
+      <a class="card" href="02 - TI/Formação Analista DevOps - Elton Fonseca (2025)/devops-player.html">
+        <div class="card-emoji">⚙️</div>
+        <div class="card-title">Formação Analista DevOps</div>
+        <div class="card-sub">Elton Fonseca (2025)</div>
+      </a>
+      <a class="card" href="02 - TI/Profissao Hacker - Gustavo Celani/profissao-hacker-player.html">
+        <div class="card-emoji">🛡️</div>
+        <div class="card-title">Profissão Hacker</div>
+        <div class="card-sub">Gustavo Celani</div>
+      </a>
+    </div>
+  </section>
+
+  <section class="categoria">
+    <h2>Outros</h2>
+    <div class="grid">
+      <a class="card" href="03 - Outros/Adestramento Descomplicado 2.0/adestramento-player.html">
+        <div class="card-emoji">🐕</div>
+        <div class="card-title">Adestramento Descomplicado 2.0</div>
+      </a>
+    </div>
+  </section>
+
+</main>
+<footer>
+  homelab-automation-server · docker/cursos
+</footer>
+</body>
+</html>

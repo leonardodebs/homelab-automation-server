@@ -94,7 +94,8 @@ homelab-automation-server/
 │   ├── n8n-backup/      # Script de backup do banco
 │   ├── docker-prune/    # Limpeza automática de imagens e cache de build
 │   ├── portainer/       # Gerência visual dos containers
-│   └── monitoring/      # Prometheus + Grafana + exporters
+│   ├── monitoring/      # Prometheus + Grafana + exporters
+│   └── cursos/          # Portal local de cursos próprios (vídeo)
 └── docs/                # Documentação do servidor e decisões
 ```
 
@@ -141,7 +142,7 @@ bash install-docker-prune.sh
 - Segredos (arquivo `.env`) nunca são versionados, apenas os `.env.example`. As senhas reais ficam só no servidor.
 - Acesso aos serviços restrito à rede local. Nada exposto à internet sem HTTPS e autenticação na frente.
 - SSH com login root direto desabilitado e fail2ban barrando força bruta.
-- Portainer, n8n, Grafana e Prometheus atrás de Caddy com `tls internal` (um Caddy por stack: [`docker/portainer/`](docker/portainer/), [`docker/n8n-stack/`](docker/n8n-stack/), [`docker/monitoring/`](docker/monitoring/)). Depois de importar as CAs locais uma vez por dispositivo, HTTPS sem aviso. Só o InfluxDB fica em http (comunicação máquina-a-máquina com o ntopng).
+- Portainer, n8n, Grafana, Prometheus e o portal de cursos atrás de Caddy com `tls internal` (um Caddy por stack: [`docker/portainer/`](docker/portainer/), [`docker/n8n-stack/`](docker/n8n-stack/), [`docker/monitoring/`](docker/monitoring/), [`docker/cursos/`](docker/cursos/)). Depois de importar as CAs locais uma vez por dispositivo, HTTPS sem aviso. Só o InfluxDB fica em http (comunicação máquina-a-máquina com o ntopng).
 
 ## 🔄 Roadmap
 
