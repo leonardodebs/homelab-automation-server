@@ -2,6 +2,12 @@
 
 Registro das escolhas técnicas feitas na montagem deste servidor.
 
+## Curadoria do portal de cursos (`docker/cursos/`)
+
+A pasta local `D:\DOWNLOADS\02 CURSOS` (152GB) tem cursos de origens diferentes. Vários vêm com um arquivo `DownloadCursos.top.html` embutido em cada pasta — marca d'água de um site conhecido de redistribuição não autorizada de cursos pagos (Hotmart, Udemy etc.). Só entram no portal os cursos sem essa marca, ou com comprovante de compra apresentado. Ficaram de fora, aguardando comprovante: Claude Code na Prática, Jornada de Dados (Engenharia de IA e Trilha Power BI), Viver de IA - Lovable.
+
+`/CURSOS` no servidor tem 180GB livres, mas o conteúdo total (152GB) não cabe com folga — daí a curadoria também serve pra não estourar o disco com material que talvez nem entre na versão final.
+
 ## Por que o hostname mudou de `vmlab` para `automation`
 
 `vmlab` não fazia mais sentido: nunca rodou VM nenhuma, sempre foi Docker + k3s direto no host. Renomeado para `automation`, combinando com `sentinel` (o Dell, `homelab-infrastructure-server`) — um constrói/roda automação, o outro vigia a rede.
